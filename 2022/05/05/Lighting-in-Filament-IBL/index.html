@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon32.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon16.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="CG," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="在现实生活中，光来自各个方向，要么直接来自光源，要么间接地在环境中的物体反弹后，在此过程中被部分吸收。 在某种程度上，物体周围的整个环境都可以看作是一个光源。 图像，尤其是立方体贴图，是编码这种“环境光”的好方法。 这称为基于图像的照明 (IBL)，有时也称为间接照明。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Lighting in Filament : IBL">
+<meta property="og:url" content="https://htplt.github.io/2022/05/05/Lighting-in-Filament-IBL/index.html">
+<meta property="og:site_name" content="Output">
+<meta property="og:description" content="在现实生活中，光来自各个方向，要么直接来自光源，要么间接地在环境中的物体反弹后，在此过程中被部分吸收。 在某种程度上，物体周围的整个环境都可以看作是一个光源。 图像，尤其是立方体贴图，是编码这种“环境光”的好方法。 这称为基于图像的照明 (IBL)，有时也称为间接照明。">
+<meta property="og:locale">
+<meta property="og:image" content="https://htplt.github.io/2022/05/05/Lighting-in-Filament-IBL/DFG.jpg">
+<meta property="og:image" content="https://htplt.github.io/2022/05/05/Lighting-in-Filament-IBL/LD.jpg">
+<meta property="article:published_time" content="2022-05-04T17:19:00.000Z">
+<meta property="article:modified_time" content="2022-11-12T17:48:01.612Z">
+<meta property="article:author" content="Silven Huang">
+<meta property="article:tag" content="CG">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://htplt.github.io/2022/05/05/Lighting-in-Filament-IBL/DFG.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"hide","offset":12,"b2t":false,"scrollpercent":false,"onmobile":true},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://htplt.github.io/2022/05/05/Lighting-in-Filament-IBL/"/>
+
+
+
+
+
+  <title>Lighting in Filament : IBL | Output</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 7.2.0"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Output</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+            About
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+            Archives
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://htplt.github.io/2022/05/05/Lighting-in-Filament-IBL/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Output">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Lighting in Filament : IBL</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2022-05-05T01:19:00+08:00">
+                2022-05-05
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/lighting/" itemprop="url" rel="index">
+                    <span itemprop="name">lighting</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>在现实生活中，光来自各个方向，要么直接来自光源，要么间接地在环境中的物体反弹后，在此过程中被部分吸收。
+在某种程度上，物体周围的整个环境都可以看作是一个光源。
+图像，尤其是立方体贴图，是编码这种“环境光”的好方法。
+这称为基于图像的照明 (IBL)，有时也称为间接照明。 <span id="more"></span></p>
+<h3 id="ibl-types">IBL Types</h3>
+<p>现代渲染引擎中一共四种常见的IBL - <strong>Distant light
+probes</strong></p>
+<p>平行光探针用于捕捉视差可以忽略的无限远的光照，一般包含天空，远处的地形或建筑特征。一般由引擎或相机生成，保存为HDRI</p>
+<ul>
+<li><p><strong>Local light probes</strong></p>
+<p>局部光探针用于从特定视点捕捉特定区域的光照，一般根据周围的几何投影到cube或者sphere上，局部光探针比平行光探针更加准确，对于材质的局部反射也非常有效</p></li>
+<li><p><strong>Planar reflections</strong></p>
+<p>镜面反射用于捕捉场景的镜像，一般只用于建筑物的地板，道路和水面。</p></li>
+<li><p><strong>Screen space reflection</strong></p>
+<p>屏幕空间反射用于捕捉基于渲染场景的反射（比如使用上一帧），一般基于深度缓存的ray-marching。SSR效果很好但消耗性能</p></li>
+</ul>
+<h3 id="processing-light-probes">Processing light probes</h3>
+<p>实时计算radiance积分的IBL显然太过昂贵，因此必须对IBL进行预处理来加速实时交互。以下介绍加速light
+probes计算的方法 - <strong>Specular reflectance</strong>:</p>
+<p><strong>pre-filtered importance sampling</strong> and
+<strong>split-sum approximation</strong> - <strong>Diffuse
+reflectance</strong>:</p>
+<p><strong>irradiance map</strong> and <strong>spherical
+harmonics</strong></p>
+<h4 id="distant-light-probes">Distant light probes</h4>
+<h5 id="diffuse-brdf">Diffuse BRDF</h5>
+<p>当漫反射使用Lambertian BRDF <span class="math display">\[
+\begin{align*}
+   f_d(\sigma) &amp;= \frac{\sigma}{\pi} \\
+L_d(n, \sigma) &amp;= \int_{\Omega} f_d(\sigma) L_{\bot}(l) \left&lt;
+n\cdot l \right&gt; dl \\
+               &amp;= \frac{\sigma}{\pi} \int_{\Omega} L_{\bot}(l)
+\left&lt; n\cdot l \right&gt; dl \\
+               &amp;= \frac{\sigma}{\pi} E_d(n) \quad \text{with the
+irradiance} \;
+        E_d(n) = \int_{\Omega} L_{\bot}(l) \left&lt; n\cdot l \right&gt;
+dl
+\end{align*}
+\]</span></p>
+<p>在离散域 <span class="math display">\[
+E_d(n) \equiv \sum_{\forall \, i \in image} L_{\bot}(s_i) \left&lt; n
+\cdot s_i \right&gt; \Omega_s
+\]</span></p>
+<p>显然可以使用上式依次计算出irradiance map的cube map。还可以使用<a
+target="_blank" rel="noopener" href="https://htelepathh.gitee.io/2022/05/01/Spherical-Harmonics/">三阶SH系数</a>来近似，只用27个系数就可以近似低频的irradiance
+map。</p>
+<h5 id="specular-brdf">Specular BRDF</h5>
+<p>Specular BRDF要更加复杂，需要计算的<span
+class="math inline">\(L_o\)</span>为</p>
+<p><span class="math display">\[
+L_o(p,\omega_o) = \int_{\Omega^+}L_i(p,\omega_i)
+f_r(p,\omega_i,\omega_o)cos\theta_i d\omega_i
+\]</span></p>
+<p><strong>The Classic Approximation</strong> <span
+class="math display">\[\int_\Omega f(x)g(x)dx\approx\frac{\int_\Omega
+f(x)dx}{\int_\Omega dx}\cdot\int_\Omega g(x)dx\]</span> when is
+accurate? - g(x)'s support is small (glossy BRDF) - g(x) is smooth
+(diffuse BRDF)</p>
+<p><span
+class="math display">\[L_o(p,\omega_o)\approx\frac{\int_{\Omega_{f_r}}
+L_i(p,\omega_i)d\omega_i}{\int_{\Omega_{f_r}}  d\omega_i}\cdot\int_{\Omega^+}
+f_r(p,\omega_i,\omega_o)cos\theta_i d\omega_i\]</span></p>
+<h6 id="split-sum-approximation">Split-sum approximation</h6>
+<p>将上式的近似写为离散形式，注意采样pdf的归一化在BRDF项里 <span
+class="math display">\[\frac{1}{N}\sum_{k=1}^N\frac{L_i(l_k)f(l_k,v)cos\theta_{l_k}}{p(l_k,v)}\approx
+(\frac{1}{N}\sum_{k=1}^NL_i(l_k))(\frac{1}{N}\sum_{k=1}^N\frac{f(l_k,v)cos\theta_{l_k}}{p(l_k,v)})\]</span></p>
+<p>把第一项称作<span class="math inline">\(LD(n,
+\alpha)\)</span>，第二项称作<span class="math inline">\(I(f(n, v,
+\alpha))\)</span>，其中BRDF写为DFV形式 <span
+class="math display">\[f(l_i, n, \alpha) = \frac{D(h, \alpha)F(f_0,
+f_{90}, \left&lt;v\cdot h\right&gt;)G(l, v, \alpha)}{4(n\cdot l)(n\cdot
+v)}\\= D(h, \alpha)F(f_0, f_{90}, \left&lt;v\cdot h\right&gt;)V(l, v,
+\alpha)
+\]</span></p>
+<p>对<span class="math inline">\(D(h)\)</span>的重要性采样<span
+class="math inline">\(h\)</span>，<span
+class="math inline">\(h\rightarrow l\)</span>转换的Jacobian为<span
+class="math inline">\(|J_{h\rightarrow l}|=4(v\cdot
+h)\)</span>，那么<span class="math inline">\(l\)</span>采样的pdf为 <span
+class="math display">\[p(l)=\frac{p(h)}{|J_{h\rightarrow
+l}|}=\frac{D(h)(n\cdot h)}{4(v \cdot h)}\]</span></p>
+<p>Fresnel为 <span class="math display">\[
+F(f_0, f_{90}, \left&lt;v\cdot h\right&gt;) = f_0 (1 -
+F_c(\left&lt;v\cdot h\right&gt;)) + f_{90} F_c(\left&lt;v\cdot
+h\right&gt;) \\
+F_c(\left&lt;v\cdot h\right&gt;) = (1 - \left&lt;v\cdot h\right&gt;)^5
+\]</span></p>
+<p>将Fresnel，pdf，全部带入BRDF积分中 <span class="math display">\[
+\begin{align*}
+I(f(n, v, \alpha))  \equiv \frac{4}{N}\sum_i^N \left[\color{green}{f_0
+(1 - F_c(\left&lt;v\cdot h\right&gt;)) + f_{90} F_c(\left&lt;v\cdot
+h\right&gt;)}\right] V(l_i, v, \alpha)\frac{\left&lt;v\cdot
+h\right&gt;}{\left&lt;n\cdot h\right&gt;} \left&lt;n\cdot l\right&gt; \\
+\end{align*}
+\]</span></p>
+<p><span class="math inline">\(I(f(n, v,
+\alpha))\)</span>可以分解为两个预计算项<span
+class="math inline">\(DFG_1,DFG_2\)</span></p>
+<p>$$ <span class="math display">\[\begin{align*}
+DFG_1(\alpha, \left&lt;n\cdot v\right&gt;)
+&amp;=      \frac{4}{N}\sum_i^N  \color{green}{(1 - F_c(\left&lt;v\cdot
+h\right&gt;))} V(l_i, v, \alpha)\frac{\left&lt;v\cdot
+h\right&gt;}{\left&lt;n\cdot h\right&gt;} \left&lt;n\cdot l\right&gt; \\
+DFG_2(\alpha, \left&lt;n\cdot v\right&gt;)
+&amp;=      \frac{4}{N}\sum_i^N  \color{green}{     F_c(\left&lt;v\cdot
+h\right&gt;) } V(l_i, v, \alpha)\frac{\left&lt;v\cdot
+h\right&gt;}{\left&lt;n\cdot h\right&gt;} \left&lt;n\cdot l\right&gt; \\
+
+\end{align*}\]</span> $$</p>
+<p>加上预计算的irradiance项<span class="math inline">\(LD(n,
+\alpha)\)</span></p>
+<p><span class="math display">\[
+LD(n, \alpha) = \frac{\sum_i^N V(l_i, n, \alpha)\left&lt;n\cdot
+l\right&gt;L_t(l_i) }{\sum_i^N \left&lt;n\cdot l\right&gt;}
+\]</span></p>
+<p>最终的<span class="math inline">\(L_{out}\)</span>为</p>
+<p><span class="math display">\[
+L_{out}(n,v,\alpha,f_0,f_{90}) \simeq LD(n, \alpha) \times \big[ f_0
+\color{red}{DFG_1(n\cdot v, \alpha)} + f_{90} \color{red}{DFG_2(n\cdot
+v, \alpha)} \big]
+\]</span></p>
+<p>预计算的<span class="math inline">\(DFG_1,DFG_2\)</span><a
+target="_blank" rel="noopener" href="https://google.github.io/filament/Filament.html#table_texturedfg">如下</a></p>
+<img src="/2022/05/05/Lighting-in-Filament-IBL/DFG.jpg" class="" title="使用$(n\cdot v,\alpha)$索引">
+<p>irradiance项<span
+class="math inline">\(LD\)</span>使用mip-map的cubemap存储，根据LOD增加，则预滤波的粗糙度增加。LOD与<span
+class="math inline">\(\alpha\)</span>的映射为 <span
+class="math display">\[
+\begin{align*}
+    \alpha       &amp;= \textbf{Roughness}^2                        \\
+    lod_{\alpha} &amp;= \alpha^{\frac{1}{2}} = \textbf{Roughness}  \\
+\end{align*}
+\]</span></p>
+<p>预计算的cubemap如下</p>
+<img src="/2022/05/05/Lighting-in-Filament-IBL/LD.jpg" class="" title="使用$\textbf{Roughness}$映射LOD">
+<h5 id="implementation">Implementation</h5>
+<p>在有<span
+class="math inline">\(DFG_1,DFG_2,LD\)</span>预计算的情况下，IBL非常直观
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">vec3 <span class="title function_">ibl</span><span class="params">(vec3 n, vec3 v, vec3 diffuseColor, vec3 f0, vec3 f90,</span></span><br><span class="line"><span class="params">        <span class="type">float</span> perceptualRoughness)</span> &#123;</span><br><span class="line">    vec3 r = reflect(n);</span><br><span class="line">    vec3 Ld = textureCube(irradianceEnvMap, r) * diffuseColor;</span><br><span class="line">    <span class="type">float</span> lod = computeLODFromRoughness(perceptualRoughness);</span><br><span class="line">    vec3 Lld = textureCube(prefilteredEnvMap, r, lod);</span><br><span class="line">    vec2 Ldfg = textureLod(dfgLut, vec2(dot(n, v), perceptualRoughness), <span class="number">0.0</span>).xy;</span><br><span class="line">    vec3 Lr =  (f0 * Ldfg.x + f90 * Ldfg.y) * Lld;</span><br><span class="line">    <span class="keyword">return</span> Ld + Lr;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>diffuse部分也可不用irradiance map，改用SH <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line">vec3 <span class="title function_">irradianceSH</span><span class="params">(vec3 n)</span> &#123;</span><br><span class="line">    <span class="comment">// uniform vec3 sphericalHarmonics[9]</span></span><br><span class="line">    <span class="comment">// We can use only the first 2 bands for better performance</span></span><br><span class="line">    <span class="keyword">return</span></span><br><span class="line">          sphericalHarmonics[<span class="number">0</span>]</span><br><span class="line">        + sphericalHarmonics[<span class="number">1</span>] * (n.y)</span><br><span class="line">        + sphericalHarmonics[<span class="number">2</span>] * (n.z)</span><br><span class="line">        + sphericalHarmonics[<span class="number">3</span>] * (n.x)</span><br><span class="line">        + sphericalHarmonics[<span class="number">4</span>] * (n.y * n.x)</span><br><span class="line">        + sphericalHarmonics[<span class="number">5</span>] * (n.y * n.z)</span><br><span class="line">        + sphericalHarmonics[<span class="number">6</span>] * (<span class="number">3.0</span> * n.z * n.z - <span class="number">1.0</span>)</span><br><span class="line">        + sphericalHarmonics[<span class="number">7</span>] * (n.z * n.x)</span><br><span class="line">        + sphericalHarmonics[<span class="number">8</span>] * (n.x * n.x - n.y * n.y);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// <span class="doctag">NOTE:</span> this is the DFG LUT implementation of the function above</span></span><br><span class="line">vec2 <span class="title function_">prefilteredDFG_LUT</span><span class="params">(<span class="type">float</span> coord, <span class="type">float</span> NoV)</span> &#123;</span><br><span class="line">    <span class="comment">// coord = sqrt(roughness), which is the mapping used by the</span></span><br><span class="line">    <span class="comment">// IBL prefiltering code when computing the mipmaps</span></span><br><span class="line">    <span class="keyword">return</span> textureLod(dfgLut, vec2(NoV, coord), <span class="number">0.0</span>).rg;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">vec3 <span class="title function_">evaluateSpecularIBL</span><span class="params">(vec3 r, <span class="type">float</span> perceptualRoughness)</span> &#123;</span><br><span class="line">    <span class="comment">// This assumes a 256x256 cubemap, with 9 mip levels</span></span><br><span class="line">    <span class="type">float</span> lod = <span class="number">8.0</span> * perceptualRoughness;</span><br><span class="line">    <span class="comment">// decodeEnvironmentMap() either decodes RGBM or is a no-op if the</span></span><br><span class="line">    <span class="comment">// cubemap is stored in a float texture</span></span><br><span class="line">    <span class="keyword">return</span> decodeEnvironmentMap(textureCubeLodEXT(environmentMap, r, lod));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">vec3 <span class="title function_">evaluateIBL</span><span class="params">(vec3 n, vec3 v, vec3 diffuseColor, vec3 f0, vec3 f90, <span class="type">float</span> perceptualRoughness)</span> &#123;</span><br><span class="line">    <span class="type">float</span> NoV = max(dot(n, v), <span class="number">0.0</span>);</span><br><span class="line">    vec3 r = reflect(-v, n);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Specular indirect</span></span><br><span class="line">    vec3 indirectSpecular = evaluateSpecularIBL(r, perceptualRoughness);</span><br><span class="line">    vec2 env = prefilteredDFG_LUT(perceptualRoughness, NoV);</span><br><span class="line">    vec3 specularColor = f0 * env.x + f90 * env.y;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Diffuse indirect</span></span><br><span class="line">    <span class="comment">// We multiply by the Lambertian BRDF to compute radiance from irradiance</span></span><br><span class="line">    <span class="comment">// With the Disney BRDF we would have to remove the Fresnel term that</span></span><br><span class="line">    <span class="comment">// depends on NoL (it would be rolled into the SH). The Lambertian BRDF</span></span><br><span class="line">    <span class="comment">// can be baked directly in the SH to save a multiplication here</span></span><br><span class="line">    vec3 indirectDiffuse = max(irradianceSH(n), <span class="number">0.0</span>) * Fd_Lambert();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Indirect contribution</span></span><br><span class="line">    <span class="keyword">return</span> diffuseColor * indirectDiffuse + indirectSpecular * specularColor;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/CG/" rel="tag"># CG</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2022/05/01/Spherical-Harmonics/" rel="next" title="Spherical Harmonics">
+                <i class="fa fa-chevron-left"></i> Spherical Harmonics
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2024/05/09/Bayesian-Inference-VAEs/" rel="prev" title="Bayesian Inference (VAEs)">
+                Bayesian Inference (VAEs) <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+      <div id="sidebar-dimmer"></div>
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/%7C%7C%20archive">
+              
+                  <span class="site-state-item-count">26</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">12</span>
+                  <span class="site-state-item-name">categories</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">16</span>
+                  <span class="site-state-item-name">tags</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#ibl-types"><span class="nav-number">1.</span> <span class="nav-text">IBL Types</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#processing-light-probes"><span class="nav-number">2.</span> <span class="nav-text">Processing light probes</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#distant-light-probes"><span class="nav-number">2.1.</span> <span class="nav-text">Distant light probes</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#diffuse-brdf"><span class="nav-number">2.1.1.</span> <span class="nav-text">Diffuse BRDF</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#specular-brdf"><span class="nav-number">2.1.2.</span> <span class="nav-text">Specular BRDF</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#split-sum-approximation"><span class="nav-number">2.1.2.1.</span> <span class="nav-text">Split-sum approximation</span></a></li></ol></li><li class="nav-item nav-level-5"><a class="nav-link" href="#implementation"><span class="nav-number">2.1.3.</span> <span class="nav-text">Implementation</span></a></li></ol></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Silven Huang</span>
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

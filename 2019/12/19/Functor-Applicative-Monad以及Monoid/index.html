@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon32.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon16.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="FP," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="看完了learn you a haskell，对于几个基本概念做一下总结，书里的版本比较老，很多hierarchies有更新，我根据GHC 8.6.5上能跑的写法记录，某些Monad的定义有简化(not real world)。尽管这些都是helloworld的级别，但是为了现在加深理解和之后不忘记，还是写下来。为了查看方便，某些代码段注释未加注释符号。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Functor,Applicative,Monad以及Monoid">
+<meta property="og:url" content="https://htplt.github.io/2019/12/19/Functor-Applicative-Monad%E4%BB%A5%E5%8F%8AMonoid/index.html">
+<meta property="og:site_name" content="Output">
+<meta property="og:description" content="看完了learn you a haskell，对于几个基本概念做一下总结，书里的版本比较老，很多hierarchies有更新，我根据GHC 8.6.5上能跑的写法记录，某些Monad的定义有简化(not real world)。尽管这些都是helloworld的级别，但是为了现在加深理解和之后不忘记，还是写下来。为了查看方便，某些代码段注释未加注释符号。">
+<meta property="og:locale">
+<meta property="article:published_time" content="2019-12-19T02:32:09.000Z">
+<meta property="article:modified_time" content="2020-01-07T14:04:39.830Z">
+<meta property="article:author" content="Silven Huang">
+<meta property="article:tag" content="FP">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"hide","offset":12,"b2t":false,"scrollpercent":false,"onmobile":true},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://htplt.github.io/2019/12/19/Functor-Applicative-Monad以及Monoid/"/>
+
+
+
+
+
+  <title>Functor,Applicative,Monad以及Monoid | Output</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 7.2.0"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Output</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+            About
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+            Archives
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://htplt.github.io/2019/12/19/Functor-Applicative-Monad%E4%BB%A5%E5%8F%8AMonoid/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Output">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Functor,Applicative,Monad以及Monoid</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2019-12-19T10:32:09+08:00">
+                2019-12-19
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Haskell/" itemprop="url" rel="index">
+                    <span itemprop="name">Haskell</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>看完了<a target="_blank" rel="noopener" href="http://learnyouahaskell.com/chapters">learn you a
+haskell</a>，对于几个基本概念做一下总结，书里的版本比较老，很多hierarchies有更新，我根据GHC
+8.6.5上能跑的写法记录，某些Monad的定义有简化(not real
+world)。尽管这些都是helloworld的级别，但是为了现在加深理解和之后不忘记，还是写下来。为了查看方便，某些代码段注释未加注释符号。
+<span id="more"></span> ## Overview 按照目前的理解<span
+class="math inline">\(\text{Functor}\supset\text{Applicative}\supset\text{Monad}\)</span>，而<span
+class="math inline">\(\text{Monoid}\)</span>是另一种性质。满足<span
+class="math inline">\(\text{Monoid}\)</span>性质的<span
+class="math inline">\(\text{Monad}\)</span>为<span
+class="math inline">\(\text{MonadPlus}\)</span>。 ## Functor
+<code>Functor</code>: things that can be mapped over <figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="type">Functor</span> f <span class="keyword">where</span></span></span><br><span class="line">    fmap :: (a -&gt; b) -&gt; f a -&gt; f b</span><br><span class="line"></span><br><span class="line"><span class="comment">-- infix version</span></span><br><span class="line">(&lt;$&gt;) :: (<span class="type">Functor</span> f) =&gt; (a -&gt; b) -&gt; f a -&gt; f b</span><br><span class="line"><span class="title">f</span> &lt;$&gt; x = fmap f x</span><br><span class="line"></span><br><span class="line"><span class="comment">--Law of Functors</span></span><br><span class="line"><span class="number">1</span>. fmap id = id</span><br><span class="line"><span class="number">2</span>. fmap (f . g) = fmap f . fmap g</span><br></pre></td></tr></table></figure> ###
+examples <figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">instance</span> <span class="type">Functor</span> (<span class="type">Either</span> <span class="title">a</span>) <span class="keyword">where</span></span>  </span><br><span class="line">    fmap f (<span class="type">Right</span> x) = <span class="type">Right</span> (f x)  </span><br><span class="line">    fmap f (<span class="type">Left</span> x) = <span class="type">Left</span> x  </span><br><span class="line"><span class="class"></span></span><br><span class="line"><span class="class"><span class="keyword">instance</span> <span class="type">Functor</span> <span class="type">Maybe</span> <span class="keyword">where</span></span>  </span><br><span class="line">    fmap f (<span class="type">Just</span> x) = <span class="type">Just</span> (f x)  </span><br><span class="line">    fmap f <span class="type">Nothing</span> = <span class="type">Nothing</span></span><br><span class="line"><span class="class"></span></span><br><span class="line"><span class="class"><span class="keyword">instance</span> <span class="type">Functor</span> ((-&gt;) r) <span class="keyword">where</span></span></span><br><span class="line">    <span class="comment">-- fmap is function composition when used on functions</span></span><br><span class="line">    fmap f g = (.)</span><br><span class="line">    fmap f g = (\x -&gt; f (g x))</span><br><span class="line">    :: (a -&gt; b) -&gt; (r -&gt; a) -&gt; (r -&gt; b)</span><br></pre></td></tr></table></figure> ## Applicative <code>Applicative</code>: enhanced
+Functor <figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> Control.Applicative</span><br><span class="line"><span class="class"></span></span><br><span class="line"><span class="class"><span class="keyword">class</span> (<span class="type">Functor</span> <span class="title">f</span>) =&gt; <span class="type">Applicative</span> f <span class="keyword">where</span></span></span><br><span class="line">    pure :: a -&gt; f a</span><br><span class="line">    (&lt;*&gt;) :: f (a -&gt; b) -&gt; f a -&gt; f b</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Law of Applicative Functor (a part of)</span></span><br><span class="line"><span class="title">pure</span> f &lt;*&gt; x = fmap f x</span><br><span class="line"><span class="number">1</span>. <span class="type">Identity</span> </span><br><span class="line">    pure id &lt;*&gt; v = v</span><br><span class="line"><span class="number">2</span>. <span class="type">Composition</span></span><br><span class="line">    pure (.) &lt;*&gt; u &lt;*&gt; v &lt;*&gt; w = u &lt;*&gt; (v &lt;*&gt; w)</span><br><span class="line"><span class="number">3</span>. <span class="type">Homomorphism</span></span><br><span class="line">    pure f &lt;*&gt; pure x = pure (f x)</span><br><span class="line"><span class="number">4</span>. <span class="type">Interchange</span></span><br><span class="line">    u &lt;*&gt; pure y = pure ($ y) &lt;*&gt; u</span><br></pre></td></tr></table></figure> ### examples <figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">instance</span> <span class="type">Applicative</span> <span class="type">Maybe</span> <span class="keyword">where</span></span></span><br><span class="line">    pure = <span class="type">Just</span></span><br><span class="line">    <span class="type">Nothing</span> &lt;*&gt; _ = <span class="type">Nothing</span></span><br><span class="line">    (<span class="type">Just</span> f) &lt;*&gt; sth = fmap f sth</span><br><span class="line"><span class="class"></span></span><br><span class="line"><span class="class"><span class="keyword">instance</span> <span class="type">Applicative</span> [] <span class="keyword">where</span></span>  </span><br><span class="line">    pure x = [x]  </span><br><span class="line">    fs &lt;*&gt; xs = [f x | f &lt;- fs, x &lt;- xs]  </span><br><span class="line"><span class="comment">-- list comprehension</span></span><br><span class="line"><span class="comment">-- &gt; [(*3),(+1)] &lt;*&gt; [1,2] </span></span><br><span class="line"><span class="comment">-- &gt; [3,6,2,3]</span></span><br><span class="line"><span class="class"></span></span><br><span class="line"><span class="class"><span class="keyword">instance</span> <span class="type">Applicative</span> <span class="type">IO</span> <span class="keyword">where</span></span>  </span><br><span class="line">    pure = return  </span><br><span class="line">    a &lt;*&gt; b = <span class="keyword">do</span>  </span><br><span class="line">        f &lt;- a  </span><br><span class="line">        x &lt;- b  </span><br><span class="line">        return (f x) </span><br><span class="line">    :: <span class="type">IO</span> (a-&gt;b) -&gt; <span class="type">IO</span> a -&gt; <span class="type">IO</span> b</span><br><span class="line"></span><br><span class="line"><span class="title">myAction</span> :: <span class="type">IO</span> <span class="type">String</span></span><br><span class="line"><span class="title">myAction</span> = (++) &lt;$&gt; getLine &lt;*&gt; getLine</span><br><span class="line">         = (fmap (++) getLine) &lt;*&gt; getLine</span><br><span class="line">         :: <span class="type">IO</span> (<span class="type">String</span> -&gt; <span class="type">String</span>) &lt;*&gt; <span class="type">IO</span> <span class="type">String</span></span><br><span class="line"><span class="class"></span></span><br><span class="line"><span class="class"><span class="keyword">instance</span> <span class="type">Applicative</span> ((-&gt;) r) <span class="keyword">where</span></span></span><br><span class="line">    pure x = (\_ -&gt; x)</span><br><span class="line">        :: a -&gt; (r-&gt;a)</span><br><span class="line">    f &lt;*&gt; g = (\x -&gt; f x (g x))</span><br><span class="line">        :: (r-&gt;(a-&gt;b)) -&gt; (r-&gt;a) -&gt; (r-&gt;b)</span><br><span class="line"></span><br><span class="line"><span class="comment">-- ZipList : Applicative wrapper for lists (for non-comprehensive purpose) </span></span><br><span class="line"><span class="class"><span class="keyword">newtype</span> <span class="type">ZipList</span> a = <span class="type">ZipList</span> &#123; <span class="title">getZipList</span> :: [<span class="title">a</span>] &#125;</span></span><br><span class="line"><span class="class"><span class="keyword">instance</span> <span class="type">Applicative</span> <span class="type">ZipList</span> <span class="keyword">where</span></span>  </span><br><span class="line">    pure x = <span class="type">ZipList</span> (repeat x)  </span><br><span class="line">    <span class="type">ZipList</span> fs &lt;*&gt; <span class="type">ZipList</span> xs = <span class="type">ZipList</span> (zipWith (\f x -&gt; f x) fs xs)</span><br></pre></td></tr></table></figure> ### LiftA <figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- use &lt;$&gt; and &lt;*&gt; for multiple (Applicative) parameter functions</span></span><br><span class="line"><span class="comment">-- &gt; app f &lt;$&gt; app para1 &lt;*&gt; app para2 &lt;*&gt; app para3 ...</span></span><br><span class="line"><span class="comment">-- &gt; (+) &lt;$&gt; (+3) &lt;*&gt; (*100) $ 1</span></span><br><span class="line"></span><br><span class="line"><span class="title">liftA</span> :: <span class="type">Applicative</span> f =&gt; (a -&gt; b) -&gt; f a -&gt; f b</span><br><span class="line"><span class="title">liftA</span> = pure f &lt;*&gt; a</span><br><span class="line"></span><br><span class="line"><span class="title">liftA2</span> :: (<span class="type">Applicative</span> f) =&gt; (a -&gt; b -&gt; c) -&gt; f a -&gt; f b -&gt; f c  </span><br><span class="line"><span class="title">liftA2</span> f a b = f &lt;$&gt; a &lt;*&gt; b </span><br><span class="line"></span><br><span class="line"><span class="title">liftA2</span> (++) getLine getLine</span><br><span class="line"><span class="title">liftA2</span> (:) (<span class="type">Just</span> <span class="number">4</span>) (<span class="type">Just</span> [<span class="number">5</span>])</span><br><span class="line"></span><br><span class="line">..liftA3</span><br></pre></td></tr></table></figure>
+## Monad <code>Monad</code>: enhanced Applicative <figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> Control.Monad</span><br><span class="line"><span class="class"></span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="type">Monad</span> m <span class="keyword">where</span></span></span><br><span class="line">    <span class="comment">-- minimal</span></span><br><span class="line">    return :: a -&gt; m a</span><br><span class="line">    (&gt;&gt;=) :: m a -&gt; (a -&gt; m b) -&gt; m b</span><br><span class="line">    <span class="comment">-- default</span></span><br><span class="line">    (&gt;&gt;):: m a -&gt; m b -&gt; m b</span><br><span class="line">    x &gt;&gt; y = x &gt;&gt;= \_ -&gt; y</span><br><span class="line"></span><br><span class="line">    fail :: <span class="type">String</span> -&gt; m a</span><br><span class="line">    fail msg = error msg</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Law of Monad</span></span><br><span class="line"><span class="number">1</span>. <span class="type">Left</span> identity :</span><br><span class="line">    return x &gt;&gt;= f = f x</span><br><span class="line"><span class="number">2</span>. <span class="type">Right</span> identity :</span><br><span class="line">    m &gt;&gt;= return = m</span><br><span class="line"><span class="number">3</span>. <span class="type">Associativity</span> :</span><br><span class="line">    (m &gt;&gt;= f) &gt;&gt;= g = m &gt;&gt;= (\x -&gt; f x &gt;&gt;= g)</span><br><span class="line">    f &lt;=&lt; (g &lt;=&lt; h) = (f &lt;=&lt; g) &lt;=&lt; h</span><br><span class="line"></span><br><span class="line">(&lt;=&lt;) :: (<span class="type">Monad</span> m) =&gt; (b -&gt; m c) -&gt; (a -&gt; m b) -&gt; (a -&gt; m c)  </span><br><span class="line"><span class="title">f</span> &lt;=&lt; g = (\x -&gt; g x &gt;&gt;= f)</span><br></pre></td></tr></table></figure> ###
+examples <figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">&#123;- the function monad is also called the Reader monad -&#125;</span></span><br><span class="line"><span class="class"><span class="keyword">instance</span> <span class="type">Monad</span> ((-&gt;) r) <span class="keyword">where</span></span>  </span><br><span class="line">    return x = \_ -&gt; x  </span><br><span class="line">    h &gt;&gt;= f = \w -&gt; f (h w) w </span><br><span class="line">    :: (r-&gt;a) -&gt; (a-&gt;(r-&gt;b)) -&gt; (r-&gt;b)</span><br><span class="line"><span class="class"></span></span><br><span class="line"><span class="class"><span class="keyword">instance</span> <span class="type">Monad</span> <span class="type">Maybe</span> <span class="keyword">where</span></span></span><br><span class="line">    return x = <span class="type">Just</span> x</span><br><span class="line">    <span class="type">Nothing</span> &gt;&gt;= f = <span class="type">Nothing</span></span><br><span class="line">    <span class="type">Just</span> x &gt;&gt;= f = f x</span><br><span class="line">    fail _ = <span class="type">Nothing</span> </span><br><span class="line"><span class="class"></span></span><br><span class="line"><span class="class"><span class="keyword">instance</span> <span class="type">Monad</span> [] <span class="keyword">where</span></span></span><br><span class="line">    return x = [x]</span><br><span class="line">    xs &gt;&gt;= f = concat (map f xs)</span><br><span class="line">    fail _ = []</span><br></pre></td></tr></table></figure> #### Error e =&gt; Either e <figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> Control.Monad.Error</span><br><span class="line"><span class="class"></span></span><br><span class="line"><span class="class"><span class="keyword">instance</span> (<span class="type">Error</span> <span class="title">e</span>) =&gt; <span class="type">Monad</span> (<span class="type">Either</span> <span class="title">e</span>) <span class="keyword">where</span></span></span><br><span class="line">    return x = <span class="type">Right</span> x</span><br><span class="line">    <span class="type">Right</span> x &gt;&gt;= f = f x</span><br><span class="line">    <span class="type">Left</span> er &gt;&gt;= _ = <span class="type">Left</span> er</span><br><span class="line">    fail msg = <span class="type">Left</span> (strMsg msg) </span><br><span class="line"><span class="comment">-- left  as error</span></span><br><span class="line"><span class="comment">-- right as result</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- example : birds land on both sides, fail when |left - right| &gt;= 4</span></span><br><span class="line"><span class="class"><span class="keyword">type</span> <span class="type">Birds</span> = <span class="type">Int</span></span></span><br><span class="line"><span class="class"><span class="keyword">type</span> <span class="type">Pole</span> = (<span class="type">Birds</span>, <span class="type">Birds</span>)</span></span><br><span class="line"></span><br><span class="line"><span class="title">showp</span> :: <span class="type">Pole</span> -&gt; <span class="type">String</span></span><br><span class="line"><span class="title">showp</span> (l, r) = <span class="string">&quot;(&quot;</span> ++  show l ++ <span class="string">&quot;, &quot;</span> ++ show r ++ <span class="string">&quot;)&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="title">landLeft</span> :: <span class="type">Birds</span> -&gt; <span class="type">Pole</span> -&gt; <span class="type">Either</span> <span class="type">String</span> <span class="type">Pole</span>  </span><br><span class="line"><span class="title">landLeft</span> n (left,right) </span><br><span class="line">    | abs ((left + n) - right) &lt; <span class="number">4</span> = <span class="type">Right</span> (left + n, right)  </span><br><span class="line">    | otherwise                    = <span class="type">Left</span> $ showp (left + n,right)</span><br><span class="line"></span><br><span class="line"><span class="title">landRight</span> :: <span class="type">Birds</span> -&gt; <span class="type">Pole</span> -&gt; <span class="type">Either</span> <span class="type">String</span> <span class="type">Pole</span></span><br><span class="line"><span class="title">landRight</span> n (left, right)  </span><br><span class="line">    | abs (left - (right + n)) &lt; <span class="number">4</span> = <span class="type">Right</span> (left, right + n)  </span><br><span class="line">    | otherwise                    = <span class="type">Left</span> $ showp (left,right + n)</span><br><span class="line"></span><br><span class="line"><span class="title">banana</span> :: <span class="type">Pole</span> -&gt; <span class="type">Either</span> <span class="type">String</span> <span class="type">Pole</span>  </span><br><span class="line"><span class="title">banana</span> (left,right) = <span class="type">Left</span> $ showp (left,right) ++ <span class="string">&quot; banana&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="title">return</span> (<span class="number">0</span>,<span class="number">0</span>) &gt;&gt;= landLeft <span class="number">2</span> &gt;&gt;= landRight <span class="number">2</span> &gt;&gt;= landLeft <span class="number">1</span></span><br><span class="line"><span class="title">return</span> (<span class="number">0</span>,<span class="number">0</span>) &gt;&gt;= landLeft <span class="number">2</span> &gt;&gt;= banana &gt;&gt;= landLeft <span class="number">1</span></span><br><span class="line"></span><br></pre></td></tr></table></figure> ####
+State <figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">newtype</span> <span class="type">State</span> s a = <span class="type">State</span> &#123; <span class="title">runState</span> :: <span class="title">s</span> -&gt; (<span class="title">a</span>, <span class="title">s</span>)&#125;</span></span><br><span class="line"><span class="comment">-- s : state</span></span><br><span class="line"><span class="comment">-- a : content</span></span><br><span class="line"><span class="class"></span></span><br><span class="line"><span class="class"><span class="keyword">instance</span> <span class="type">Monad</span> (<span class="type">State</span> <span class="title">s</span>) <span class="keyword">where</span></span></span><br><span class="line">    return x = <span class="type">State</span> $ \s -&gt; (x, s)</span><br><span class="line">    (<span class="type">State</span> h) &gt;&gt;= f = <span class="type">State</span> $ \s -&gt; <span class="keyword">let</span> (a, newState) = h s</span><br><span class="line">                                        (<span class="type">State</span> g) = f a</span><br><span class="line">                                    <span class="keyword">in</span>  g newState</span><br><span class="line"></span><br><span class="line">    :: (<span class="type">Monad</span> s-&gt;(a,s))   a-&gt;(<span class="type">Monad</span> s-&gt;(b,s))   <span class="type">Monad</span> s-&gt;(b,s)</span><br><span class="line">    :: (<span class="type">State</span> s a) -&gt; (a-&gt;<span class="type">State</span> s b) -&gt; (<span class="type">State</span> s b) </span><br><span class="line"></span><br><span class="line"><span class="title">get</span> :: <span class="type">State</span> s s</span><br><span class="line"><span class="title">get</span> = <span class="type">State</span> $ \s -&gt; (s, s)</span><br><span class="line"></span><br><span class="line"><span class="title">put</span> :: s -&gt; <span class="type">State</span> s ()</span><br><span class="line"><span class="title">put</span> s = <span class="type">State</span> $ \_ -&gt; ((), s)</span><br><span class="line"></span><br><span class="line"><span class="comment">-- example : a stack</span></span><br><span class="line"><span class="class"><span class="keyword">type</span> <span class="type">Stack</span> = [<span class="type">Int</span>]</span></span><br><span class="line"></span><br><span class="line"><span class="title">pop</span> :: <span class="type">State</span> <span class="type">Stack</span> <span class="type">Int</span></span><br><span class="line"><span class="title">pop</span> = state $ \(x:xs) -&gt; (x, xs)</span><br><span class="line"></span><br><span class="line"><span class="title">push</span> :: <span class="type">Int</span> -&gt; <span class="type">State</span> <span class="type">Stack</span> ()</span><br><span class="line"><span class="title">push</span> a = state $ \x -&gt; ((), a:x)</span><br><span class="line"></span><br><span class="line"><span class="title">stackManip</span> :: <span class="type">State</span> <span class="type">Stack</span> <span class="type">Int</span></span><br><span class="line"><span class="title">stackManip</span> = <span class="keyword">do</span></span><br><span class="line">    push <span class="number">3</span></span><br><span class="line">    pop</span><br><span class="line">    pop</span><br><span class="line"><span class="comment">-- or chained</span></span><br><span class="line"><span class="title">return</span> () &gt;&gt;= (\_ -&gt; push <span class="number">3</span> &gt;&gt;= (\_ -&gt; pop &gt;&gt;= (\_ -&gt; pop)))</span><br><span class="line"></span><br><span class="line"><span class="title">runState</span> (return () &gt;&gt;= (\_ -&gt; push <span class="number">3</span> &gt;&gt;= (\_ -&gt; pop &gt;&gt;= (\_ -&gt; pop)))) [<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>]</span><br><span class="line"><span class="title">runState</span> (join (state $ \s -&gt; (push <span class="number">10</span>,<span class="number">1</span>:<span class="number">2</span>:s))) [<span class="number">0</span>,<span class="number">0</span>,<span class="number">0</span>]</span><br></pre></td></tr></table></figure> #### Writer <figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> Data.Monoid</span><br><span class="line"><span class="keyword">import</span> Control.Monad.Writer</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">newtype</span> <span class="type">Writer</span> w a = <span class="type">Writer</span> &#123; <span class="title">runWriter</span> :: (<span class="title">a</span>, <span class="title">w</span>) &#125; </span></span><br><span class="line"><span class="comment">-- w : Monoid (logs)</span></span><br><span class="line"><span class="comment">-- content</span></span><br><span class="line"><span class="class"></span></span><br><span class="line"><span class="class"><span class="keyword">instance</span> (<span class="type">Monoid</span> <span class="title">w</span>) =&gt; <span class="type">Monad</span> (<span class="type">Writer</span> <span class="title">w</span>) <span class="keyword">where</span></span></span><br><span class="line">    return x = <span class="type">Writer</span> (x, mempty)</span><br><span class="line">    (<span class="type">Writer</span> (a, w)) &gt;&gt;= f = <span class="keyword">let</span> (<span class="type">Writer</span> (b, w&#x27;)) = f x </span><br><span class="line">                            <span class="keyword">in</span>  <span class="type">Writer</span> (b, w &lt;&gt; w&#x27;)</span><br><span class="line"></span><br><span class="line"><span class="comment">-- examples : gcd with trace</span></span><br><span class="line"><span class="title">gcd&#x27;</span> :: <span class="type">Int</span> -&gt; <span class="type">Int</span> -&gt; <span class="type">Writer</span> [<span class="type">String</span>] <span class="type">Int</span></span><br><span class="line"><span class="title">gcd&#x27;</span> a b</span><br><span class="line">    | b == <span class="number">0</span> = <span class="keyword">do</span></span><br><span class="line">        tell [<span class="string">&quot;Finish with &quot;</span> ++ show a]</span><br><span class="line">        return a </span><br><span class="line">    | otherwise = <span class="keyword">do</span></span><br><span class="line">        <span class="comment">-- Notice tell is before recursion, </span></span><br><span class="line">        <span class="comment">-- the list is constructed from right</span></span><br><span class="line">        tell [show a ++  <span class="string">&quot; mod &quot;</span> ++ show b ++ <span class="string">&quot; = &quot;</span> ++ show (a `mod` b)]</span><br><span class="line">        gcd&#x27; b (a `mod` b)</span><br><span class="line"><span class="comment">-- the list is constructed from left (BAD)</span></span><br><span class="line">    | otherwise = <span class="keyword">do</span>  </span><br><span class="line">        result &lt;- gcdReverse b (a `mod` b)  </span><br><span class="line">        tell [show a ++ <span class="string">&quot; mod &quot;</span> ++ show b ++ <span class="string">&quot; = &quot;</span> ++ show (a `mod` b)]  </span><br><span class="line">        return result </span><br><span class="line"></span><br></pre></td></tr></table></figure> ### Monad functions
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- means flatten</span></span><br><span class="line"><span class="title">join</span> :: (<span class="type">Monad</span> m) =&gt; m (m a) -&gt; m a</span><br><span class="line"><span class="title">join</span> mm = <span class="keyword">do</span></span><br><span class="line">    m &lt;- mm</span><br><span class="line">    m</span><br><span class="line"><span class="comment">-- or chained</span></span><br><span class="line"><span class="title">mm</span> &gt;&gt;= (\m -&gt; m)</span><br><span class="line"><span class="comment">-- NOTICE the pattern match in lambda</span></span><br><span class="line">:: m (m a) -&gt; ((m a) -&gt; m a) -&gt; m a</span><br><span class="line"></span><br><span class="line"><span class="title">ap</span> :: (<span class="type">Monad</span> m) =&gt; m (a -&gt; b) -&gt; m a -&gt; m b  </span><br><span class="line"><span class="title">ap</span> mf m = <span class="keyword">do</span></span><br><span class="line">    f &lt;- mf</span><br><span class="line">    x &lt;- m</span><br><span class="line">    return f x</span><br><span class="line"><span class="comment">-- or chained</span></span><br><span class="line"><span class="title">mf</span> &gt;&gt;= (\f -&gt; (m &gt;&gt;= (\x -&gt; return (f x))))</span><br><span class="line"><span class="comment">-- ap = &lt;*&gt;</span></span><br><span class="line"><span class="comment">-- return = pure</span></span><br><span class="line"></span><br><span class="line"><span class="title">liftM</span> :: (<span class="type">Monad</span> m) =&gt; (a-&gt;b) -&gt; m a -&gt; m b</span><br><span class="line"><span class="title">liftM&#x27;</span> f m = <span class="keyword">do</span>  </span><br><span class="line">    x &lt;- m  </span><br><span class="line">    return (f x) </span><br><span class="line"><span class="comment">-- or chained</span></span><br><span class="line"><span class="title">m</span> &gt;&gt;= (\x -&gt; return (f x))</span><br><span class="line"></span><br><span class="line">..liftM5</span><br></pre></td></tr></table></figure> ### Creating a Monad <figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> Data.Ratio</span><br><span class="line"><span class="keyword">import</span> Data.List</span><br><span class="line"><span class="keyword">import</span> Control.Monad</span><br><span class="line"></span><br><span class="line"><span class="comment">-- define a Monad Prob</span></span><br><span class="line"><span class="class"><span class="keyword">newtype</span> <span class="type">Prob</span> a = <span class="type">Prob</span> &#123; <span class="title">getProb</span> :: [(<span class="title">a</span>, <span class="type">Rational</span>)] &#125; <span class="keyword">deriving</span> <span class="type">Show</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- implement Functor, Applicative, Monad type class</span></span><br><span class="line"><span class="class"><span class="keyword">instance</span> <span class="type">Functor</span> <span class="type">Prob</span> <span class="keyword">where</span></span></span><br><span class="line">    fmap f (<span class="type">Prob</span> xs) = <span class="type">Prob</span> $ map (\(x, p) -&gt; (f x, p)) xs</span><br><span class="line"><span class="class"></span></span><br><span class="line"><span class="class"><span class="keyword">instance</span> <span class="type">Applicative</span> <span class="type">Prob</span> <span class="keyword">where</span></span></span><br><span class="line">    pure = return</span><br><span class="line">    <span class="type">Prob</span> fs &lt;*&gt; <span class="type">Prob</span> xs = <span class="type">Prob</span> $ [pairMake f x | f &lt;- fs, x &lt;- xs]</span><br><span class="line">        <span class="keyword">where</span> pairMake (f, r1) (x, r2) = (f x, r1 * r2)</span><br><span class="line"><span class="class"></span></span><br><span class="line"><span class="class"><span class="keyword">instance</span> <span class="type">Monad</span> <span class="type">Prob</span> <span class="keyword">where</span></span></span><br><span class="line">    return x = <span class="type">Prob</span> [(x, <span class="number">1</span>%<span class="number">1</span>)]</span><br><span class="line">    <span class="comment">-- use m &gt;&gt;= f = join (fmap f m)</span></span><br><span class="line">    m &gt;&gt;= f = flatten (fmap f m)</span><br><span class="line">    fail _ = <span class="type">Prob</span> []</span><br><span class="line"></span><br><span class="line"><span class="comment">-- make the type&#x27;s own join (flatten)</span></span><br><span class="line"><span class="title">flatten</span> :: <span class="type">Prob</span> (<span class="type">Prob</span> a) -&gt; <span class="type">Prob</span> a </span><br><span class="line"><span class="title">flatten</span> (<span class="type">Prob</span> x) = <span class="type">Prob</span> $ concat $ map multAll x</span><br><span class="line">    <span class="keyword">where</span> multAll (<span class="type">Prob</span> inner, p) = map (\(ch, r) -&gt; (ch, r * p)) inner</span><br><span class="line"></span><br><span class="line"><span class="comment">-- example : toss three coins, calculate the possibilities </span></span><br><span class="line"><span class="class"><span class="keyword">data</span> <span class="type">Coin</span> = <span class="type">Heads</span> | <span class="type">Tails</span> <span class="keyword">deriving</span> (<span class="type">Show</span>, <span class="type">Eq</span>)</span></span><br><span class="line"></span><br><span class="line"><span class="title">coin</span> :: <span class="type">Prob</span> <span class="type">Coin</span></span><br><span class="line"><span class="title">coin</span> = <span class="type">Prob</span> [(<span class="type">Heads</span>, <span class="number">1</span>%<span class="number">2</span>), (<span class="type">Tails</span>, <span class="number">1</span>%<span class="number">2</span>)]</span><br><span class="line"></span><br><span class="line"><span class="title">loadedCoin</span> :: <span class="type">Prob</span> <span class="type">Coin</span></span><br><span class="line"><span class="title">loadedCoin</span> = <span class="type">Prob</span> [(<span class="type">Heads</span>,<span class="number">1</span>%<span class="number">10</span>),(<span class="type">Tails</span>,<span class="number">9</span>%<span class="number">10</span>)]</span><br><span class="line"></span><br><span class="line"><span class="title">flipThree</span> :: <span class="type">Prob</span> <span class="type">Bool</span>  </span><br><span class="line"><span class="title">flipThree</span> = permute $ <span class="keyword">do</span>  </span><br><span class="line">    a &lt;- coin  </span><br><span class="line">    b &lt;- coin  </span><br><span class="line">    c &lt;- loadedCoin  </span><br><span class="line">    <span class="comment">-- NOTICE a,b,c is non-deterministic</span></span><br><span class="line">    <span class="comment">-- so [a,b,c] is comprehensive </span></span><br><span class="line">    <span class="comment">-- (comes from Applicative &lt;*&gt;)</span></span><br><span class="line">    return (all (==<span class="type">Tails</span>) [a,b,c]) </span><br><span class="line"></span><br><span class="line"><span class="comment">-- chained example</span></span><br><span class="line"><span class="comment">-- returns a non-deterministic value</span></span><br><span class="line"><span class="title">coin</span> &gt;&gt;= (\a -&gt; loadedCoin &gt;&gt;= (\b -&gt; return [a, b]))</span><br><span class="line"></span><br><span class="line"><span class="comment">-- combine the Tails</span></span><br><span class="line"><span class="title">permute</span> :: <span class="type">Prob</span> <span class="type">Bool</span> -&gt; <span class="type">Prob</span> <span class="type">Bool</span></span><br><span class="line"><span class="title">permute</span> (<span class="type">Prob</span> xs) = <span class="type">Prob</span> [(<span class="type">False</span>, <span class="number">1</span>%<span class="number">1</span> - p), (<span class="type">True</span>, p)]</span><br><span class="line">    <span class="keyword">where</span> (_, p) = head $ filter fst xs</span><br></pre></td></tr></table></figure></p>
+<h2 id="monoid">Monoid</h2>
+<p><code>Monoid</code>: types with an associative binary operation that
+has an identity <figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> Data.Monoid</span><br><span class="line"><span class="class"></span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="type">Semigroup</span> a =&gt; <span class="type">Monoid</span> a <span class="keyword">where</span></span></span><br><span class="line">    mempty :: m</span><br><span class="line">    &lt;&gt; :: m -&gt; m -&gt; m</span><br><span class="line">    <span class="comment">-- default</span></span><br><span class="line">    mconcat :: [m] -&gt; m </span><br><span class="line">    mconcat = foldr &lt;&gt; mempty</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Laws of Monoids</span></span><br><span class="line"><span class="number">1</span>. <span class="type">Right</span> identity</span><br><span class="line">    x &lt;&gt; mempty = x</span><br><span class="line"><span class="number">2</span>. <span class="type">Left</span> identity</span><br><span class="line">    mempty &lt;&gt; x = x</span><br><span class="line"><span class="number">3</span>. <span class="type">Associativity</span></span><br><span class="line">    x &lt;&gt; (y &lt;&gt; z) = (x &lt;&gt; y) &lt;&gt; z (<span class="type">Semigroup</span> law)</span><br><span class="line"><span class="number">4</span>. <span class="type">Concatenation</span></span><br><span class="line">    mconcat = foldr (&lt;&gt;) mempty</span><br></pre></td></tr></table></figure> ### examples <figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">&#123;- lists -&#125;</span></span><br><span class="line"><span class="class"><span class="keyword">instance</span> <span class="type">Monoid</span> [a] <span class="keyword">where</span></span></span><br><span class="line">    mempty = []</span><br><span class="line">    &lt;&gt; = (++)</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Product</span></span><br><span class="line"><span class="class"><span class="keyword">newtype</span> <span class="type">Product</span> a =  <span class="type">Product</span> &#123; <span class="title">getProduct</span> :: <span class="title">a</span> &#125;  </span></span><br><span class="line">    <span class="keyword">deriving</span> (<span class="type">Eq</span>, <span class="type">Ord</span>, <span class="type">Read</span>, <span class="type">Show</span>, <span class="type">Bounded</span>)  </span><br><span class="line"><span class="class"></span></span><br><span class="line"><span class="class"><span class="keyword">instance</span> <span class="type">Num</span> a =&gt; <span class="type">Monoid</span> (<span class="type">Product</span> <span class="title">a</span>) <span class="keyword">where</span></span></span><br><span class="line">    mempty = <span class="type">Product</span> <span class="number">1</span></span><br><span class="line">    <span class="type">Product</span> x &lt;&gt; <span class="type">Product</span> y = <span class="type">Product</span> (x * y)</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Bool</span></span><br><span class="line"><span class="class"><span class="keyword">newtype</span> <span class="type">Any</span> = <span class="type">Any</span> &#123; <span class="title">getAny</span> :: <span class="type">Bool</span> &#125;</span></span><br><span class="line">    <span class="keyword">deriving</span> (<span class="type">Eq</span>, <span class="type">Ord</span>, <span class="type">Read</span>, <span class="type">Show</span>, <span class="type">Bounded</span>)</span><br><span class="line"><span class="class"></span></span><br><span class="line"><span class="class"><span class="keyword">instance</span> <span class="type">Monoid</span> <span class="type">Any</span> <span class="keyword">where</span></span></span><br><span class="line">    mempty = <span class="type">Any</span> <span class="type">False</span></span><br><span class="line">    <span class="type">Any</span> x &lt;&gt; <span class="type">Any</span> y = <span class="type">Any</span> (x || y)</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">newtype</span> <span class="type">All</span> = <span class="type">All</span> &#123; <span class="title">getAll</span> :: <span class="type">Bool</span> &#125;</span></span><br><span class="line">    <span class="keyword">deriving</span> (<span class="type">Eq</span>, <span class="type">Ord</span>, <span class="type">Read</span>, <span class="type">Show</span>, <span class="type">Bounded</span>)</span><br><span class="line"><span class="class"></span></span><br><span class="line"><span class="class"><span class="keyword">instance</span> <span class="type">Monoid</span> <span class="type">All</span> <span class="keyword">where</span></span></span><br><span class="line">    mempty = <span class="type">All</span> <span class="type">True</span></span><br><span class="line">    <span class="type">All</span> x &lt;&gt; <span class="type">All</span> y = <span class="type">All</span> (x &amp;&amp; y)</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Ordering</span></span><br><span class="line"><span class="comment">-- can be used in String compare</span></span><br><span class="line"><span class="class"><span class="keyword">instance</span> <span class="type">Monoid</span> <span class="type">Ordering</span> <span class="keyword">where</span></span></span><br><span class="line">    mempty = <span class="type">EQ</span> </span><br><span class="line">    <span class="type">LT</span> &lt;&gt; _ = <span class="type">LT</span></span><br><span class="line">    <span class="type">EQ</span> &lt;&gt; y = y</span><br><span class="line">    <span class="type">GT</span> &lt;&gt; _ = <span class="type">GT</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- examples : DiffList, always concat from right</span></span><br><span class="line"><span class="class"><span class="keyword">newtype</span> <span class="type">DiffList</span> a = <span class="type">DiffList</span> &#123; <span class="title">getDiffList</span> :: [<span class="title">a</span>] -&gt; [<span class="title">a</span>] &#125;</span></span><br><span class="line"></span><br><span class="line"><span class="title">toDiffList</span> :: [a] -&gt; <span class="type">DiffList</span> a</span><br><span class="line"><span class="title">toDiffList</span> xs = <span class="type">DiffList</span> (xs++)</span><br><span class="line"></span><br><span class="line"><span class="title">fromDiffList</span> :: <span class="type">DiffList</span> a -&gt; [a]</span><br><span class="line"><span class="title">fromDiffList</span> (<span class="type">DiffList</span> f) = f []</span><br><span class="line"><span class="class"></span></span><br><span class="line"><span class="class"><span class="keyword">instance</span> <span class="type">Monoid</span> (<span class="type">DiffList</span> <span class="title">a</span>) <span class="keyword">where</span></span></span><br><span class="line">    mempty = <span class="type">DiffList</span> ([]++)</span><br><span class="line"><span class="class"></span></span><br><span class="line"><span class="class"><span class="keyword">instance</span> <span class="type">Semigroup</span> (<span class="type">DiffList</span> <span class="title">a</span>) <span class="keyword">where</span></span></span><br><span class="line">    (<span class="type">DiffList</span> f) &lt;&gt; (<span class="type">DiffList</span> g) = <span class="type">DiffList</span> (\xs -&gt; f (g xs))</span><br><span class="line"></span><br><span class="line"><span class="comment">&#123;- quick version -&#125;</span></span><br><span class="line"><span class="title">finalCountDown</span> :: <span class="type">Int</span> -&gt; <span class="type">Writer</span> (<span class="type">DiffList</span> <span class="type">String</span>) ()</span><br><span class="line"><span class="title">finalCountDown</span> <span class="number">0</span> = <span class="keyword">do</span> </span><br><span class="line">    tell $ toDiffList [<span class="string">&quot;0&quot;</span>]</span><br><span class="line"><span class="title">finalCountDown</span> x = <span class="keyword">do</span> </span><br><span class="line">    finalCountDown $ x - <span class="number">1</span></span><br><span class="line">    tell $ toDiffList [show x]</span><br><span class="line"></span><br><span class="line"><span class="comment">&#123;- slow version -&#125;</span></span><br><span class="line"><span class="title">finalCountDowns</span> :: <span class="type">Int</span> -&gt; <span class="type">Writer</span> [<span class="type">String</span>] ()  </span><br><span class="line"><span class="title">finalCountDowns</span> <span class="number">0</span> = <span class="keyword">do</span>  </span><br><span class="line">    tell [<span class="string">&quot;0&quot;</span>]  </span><br><span class="line"><span class="title">finalCountDowns</span> x = <span class="keyword">do</span>  </span><br><span class="line">    finalCountDowns (x-<span class="number">1</span>)  </span><br><span class="line">    tell [show x] </span><br><span class="line"></span><br><span class="line"><span class="title">mapM_</span> putStrLn . snd . runWriter $ finalCountDown <span class="number">500000</span></span><br></pre></td></tr></table></figure> ####
+MonadPlus <code>MonadPlus</code>: Monads that satifies Monoid laws
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="type">Monad</span> m =&gt; <span class="type">MonadPlus</span> m <span class="keyword">where</span></span></span><br><span class="line">    mzero :: m a </span><br><span class="line">    mplus :: m a -&gt; m a -&gt; m a </span><br><span class="line"></span><br><span class="line"><span class="comment">-- list is MonadPlus</span></span><br><span class="line"><span class="class"><span class="keyword">instance</span> <span class="type">MonadPlus</span> [] <span class="keyword">where</span></span></span><br><span class="line">    mzero = []</span><br><span class="line">    mplus = (++)</span><br><span class="line"></span><br><span class="line"><span class="title">guard</span> :: (<span class="type">MonadPlus</span> m) =&gt; <span class="type">Bool</span> -&gt; m ()</span><br><span class="line"><span class="title">guard</span> <span class="type">True</span> = return ()</span><br><span class="line"><span class="title">guard</span> <span class="type">False</span> = mzero</span><br><span class="line"></span><br><span class="line">[<span class="number">1</span>..<span class="number">50</span>] &gt;&gt;= (\x -&gt; guard (<span class="string">&#x27;7&#x27;</span> `elem` show x) &gt;&gt; return x)  </span><br></pre></td></tr></table></figure> ## Practice
+三个书中的小例子，都是用于介绍zippers的方法。由于haskell中的值无法改变，每一次"改变"其实都是返回新的值，因此，对每个数据结构进行操作的过程中，每个新值里都要全局的信息。
+### ListZipper ListZipper只要包含之前元素和之后元素的两个list即可。
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- include the elem ahead and behind</span></span><br><span class="line"><span class="class"><span class="keyword">type</span> <span class="type">ListZipper</span> a = ([<span class="title">a</span>],[<span class="title">a</span>]) </span></span><br><span class="line"></span><br><span class="line"><span class="title">goForward</span> :: <span class="type">ListZipper</span> a -&gt; <span class="type">ListZipper</span> a</span><br><span class="line"><span class="title">goForward</span> (x:xs, bs) = (xs, x:bs)</span><br><span class="line"></span><br><span class="line"><span class="title">goBack</span> :: <span class="type">ListZipper</span> a -&gt; <span class="type">ListZipper</span> a </span><br><span class="line"><span class="title">goBack</span> (xs, b:bs) = (b:xs, bs) </span><br><span class="line"></span><br><span class="line"><span class="title">let</span> xs = [<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>,<span class="number">4</span>]</span><br><span class="line"><span class="title">goForward</span> (xs,[])</span><br></pre></td></tr></table></figure> ### Binary tree 对于Binary
+tree，从根节点开始，每次向左或向右都相应的保存令一侧的结点，构成trace的列表。
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br></pre></td><td class="code"><pre><span class="line"><span class="title">freeTree</span> :: <span class="type">Tree</span> <span class="type">Char</span>  </span><br><span class="line"><span class="title">freeTree</span> =   </span><br><span class="line">    <span class="type">Node</span> <span class="string">&#x27;P&#x27;</span>  </span><br><span class="line">        (<span class="type">Node</span> <span class="string">&#x27;O&#x27;</span>  </span><br><span class="line">            (<span class="type">Node</span> <span class="string">&#x27;L&#x27;</span>  </span><br><span class="line">                (<span class="type">Node</span> <span class="string">&#x27;N&#x27;</span> <span class="type">Empty</span> <span class="type">Empty</span>)  </span><br><span class="line">                (<span class="type">Node</span> <span class="string">&#x27;T&#x27;</span> <span class="type">Empty</span> <span class="type">Empty</span>)  </span><br><span class="line">            )  </span><br><span class="line">            (<span class="type">Node</span> <span class="string">&#x27;Y&#x27;</span>  </span><br><span class="line">                (<span class="type">Node</span> <span class="string">&#x27;S&#x27;</span> <span class="type">Empty</span> <span class="type">Empty</span>)  </span><br><span class="line">                (<span class="type">Node</span> <span class="string">&#x27;A&#x27;</span> <span class="type">Empty</span> <span class="type">Empty</span>)  </span><br><span class="line">            )  </span><br><span class="line">        )  </span><br><span class="line">        (<span class="type">Node</span> <span class="string">&#x27;L&#x27;</span>  </span><br><span class="line">            (<span class="type">Node</span> <span class="string">&#x27;W&#x27;</span>  </span><br><span class="line">                (<span class="type">Node</span> <span class="string">&#x27;C&#x27;</span> <span class="type">Empty</span> <span class="type">Empty</span>)  </span><br><span class="line">                (<span class="type">Node</span> <span class="string">&#x27;R&#x27;</span> <span class="type">Empty</span> <span class="type">Empty</span>)  </span><br><span class="line">            )  </span><br><span class="line">            (<span class="type">Node</span> <span class="string">&#x27;A&#x27;</span>  </span><br><span class="line">                (<span class="type">Node</span> <span class="string">&#x27;A&#x27;</span> <span class="type">Empty</span> <span class="type">Empty</span>)  </span><br><span class="line">                (<span class="type">Node</span> <span class="string">&#x27;C&#x27;</span> <span class="type">Empty</span> <span class="type">Empty</span>)  </span><br><span class="line">            )  </span><br><span class="line">        )  </span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">data</span> <span class="type">Crumb</span> a = <span class="type">LeftCrumb</span> a (<span class="type">Tree</span> <span class="title">a</span>) | <span class="type">RightCrumb</span> a (<span class="type">Tree</span> <span class="title">a</span>) <span class="keyword">deriving</span> (<span class="type">Show</span>) </span></span><br><span class="line"><span class="class"><span class="keyword">type</span> <span class="type">Zipper</span> a = (<span class="type">Tree</span> <span class="title">a</span>, [<span class="type">Crumb</span> <span class="title">a</span>])</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- change node</span></span><br><span class="line"><span class="title">modify</span> :: (a-&gt;a) -&gt; <span class="type">Zipper</span> a -&gt; <span class="type">Zipper</span> a</span><br><span class="line"><span class="title">modify</span> f (<span class="type">Node</span> x l r, bs) = (<span class="type">Node</span> (f x) l r, bs)</span><br><span class="line"><span class="title">modify</span> f (<span class="type">Empty</span>, bs) = (<span class="type">Empty</span>, bs)</span><br><span class="line"></span><br><span class="line"><span class="comment">-- attach node</span></span><br><span class="line"><span class="title">attach</span> :: <span class="type">Tree</span> a -&gt; <span class="type">Zipper</span> a -&gt; <span class="type">Zipper</span> a</span><br><span class="line"><span class="title">attach</span> t (_, bs) = (t, bs)</span><br><span class="line"></span><br><span class="line"><span class="comment">-- find root</span></span><br><span class="line"><span class="title">topMost</span> :: <span class="type">Zipper</span> a -&gt; <span class="type">Zipper</span> a</span><br><span class="line"><span class="title">topMost</span> (t, []) = (t, [])</span><br><span class="line"><span class="title">topMost</span> p = topMost uped</span><br><span class="line">    <span class="keyword">where</span> <span class="type">Just</span> uped = goUp p</span><br><span class="line"></span><br><span class="line"><span class="comment">-- go left, save right</span></span><br><span class="line"><span class="title">goLeft</span> :: <span class="type">Zipper</span> a -&gt; <span class="type">Maybe</span> (<span class="type">Zipper</span> a) </span><br><span class="line"><span class="title">goLeft</span> (<span class="type">Node</span> x l r , bs) = <span class="type">Just</span> (l, <span class="type">LeftCrumb</span> x r:bs)</span><br><span class="line"><span class="title">goLeft</span> (<span class="type">Empty</span>, _) = <span class="type">Nothing</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- go right, save left</span></span><br><span class="line"><span class="title">goRight</span> :: <span class="type">Zipper</span> a -&gt; <span class="type">Maybe</span> (<span class="type">Zipper</span> a)  </span><br><span class="line"><span class="title">goRight</span> (<span class="type">Node</span> x l r , bs) = <span class="type">Just</span> (r, <span class="type">RightCrumb</span> x l:bs)</span><br><span class="line"><span class="title">goRight</span> (<span class="type">Empty</span>, _) = <span class="type">Nothing</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- go to parent</span></span><br><span class="line"><span class="title">goUp</span> :: <span class="type">Zipper</span> a -&gt; <span class="type">Maybe</span> (<span class="type">Zipper</span> a) </span><br><span class="line"><span class="title">goUp</span> (l, <span class="type">LeftCrumb</span> x r:bs) = <span class="type">Just</span> (<span class="type">Node</span> x l r, bs)</span><br><span class="line"><span class="title">goUp</span> (r, <span class="type">RightCrumb</span> x l:bs) = <span class="type">Just</span> (<span class="type">Node</span> x l r, bs)</span><br><span class="line"><span class="title">goUp</span> (_, []) = <span class="type">Nothing</span>  </span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="title">return</span> (freeTree,[]) &gt;&gt;= goRight &gt;&gt;= goRight &gt;&gt;= goRight </span><br></pre></td></tr></table></figure> ### A simple file system file
+system中有File和Folder，在每次进入下一层Folder时，保存当前Folder之前和之后的FSItem的list，以及当前Folder的名字。这样每一层的两个list和一个Name构成trace
+list中的一项，trace list用于还原。 <figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> Data.List</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">type</span> <span class="type">Name</span> = <span class="type">String</span></span></span><br><span class="line"><span class="class"><span class="keyword">type</span> <span class="type">Data</span> = <span class="type">String</span></span></span><br><span class="line"><span class="comment">-- define FSItem = File | Folder</span></span><br><span class="line"><span class="class"><span class="keyword">data</span> <span class="type">FSItem</span> = <span class="type">File</span> <span class="type">Name</span> <span class="type">Data</span> | <span class="type">Folder</span> <span class="type">Name</span> [<span class="type">FSItem</span>] <span class="keyword">deriving</span> (<span class="type">Show</span>)</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- the file system</span></span><br><span class="line"><span class="title">myDisk</span> :: <span class="type">FSItem</span></span><br><span class="line"><span class="title">myDisk</span> = <span class="type">Folder</span> <span class="string">&quot;root&quot;</span>   </span><br><span class="line">            [ <span class="type">File</span> <span class="string">&quot;goat_yelling_like_man.wmv&quot;</span> <span class="string">&quot;baaaaaa&quot;</span>  </span><br><span class="line">            , <span class="type">File</span> <span class="string">&quot;pope_time.avi&quot;</span> <span class="string">&quot;god bless&quot;</span>  </span><br><span class="line">            , <span class="type">Folder</span> <span class="string">&quot;pics&quot;</span>  </span><br><span class="line">                [ <span class="type">File</span> <span class="string">&quot;ape_throwing_up.jpg&quot;</span> <span class="string">&quot;bleargh&quot;</span>  </span><br><span class="line">                , <span class="type">File</span> <span class="string">&quot;watermelon_smash.gif&quot;</span> <span class="string">&quot;smash!!&quot;</span>  </span><br><span class="line">                , <span class="type">File</span> <span class="string">&quot;skull_man(scary).bmp&quot;</span> <span class="string">&quot;Yikes!&quot;</span>  </span><br><span class="line">                ]  </span><br><span class="line">            , <span class="type">File</span> <span class="string">&quot;dijon_poupon.doc&quot;</span> <span class="string">&quot;best mustard&quot;</span>  </span><br><span class="line">            , <span class="type">Folder</span> <span class="string">&quot;programs&quot;</span>  </span><br><span class="line">                [ <span class="type">File</span> <span class="string">&quot;fartwizard.exe&quot;</span> <span class="string">&quot;10gotofart&quot;</span>  </span><br><span class="line">                , <span class="type">File</span> <span class="string">&quot;owl_bandit.dmg&quot;</span> <span class="string">&quot;mov eax, h00t&quot;</span>  </span><br><span class="line">                , <span class="type">File</span> <span class="string">&quot;not_a_virus.exe&quot;</span> <span class="string">&quot;really not a virus&quot;</span>  </span><br><span class="line">                , <span class="type">Folder</span> <span class="string">&quot;source code&quot;</span>  </span><br><span class="line">                    [ <span class="type">File</span> <span class="string">&quot;best_hs_prog.hs&quot;</span> <span class="string">&quot;main = print (fix error)&quot;</span>  </span><br><span class="line">                    , <span class="type">File</span> <span class="string">&quot;random.hs&quot;</span> <span class="string">&quot;main = print 4&quot;</span>  </span><br><span class="line">                    ]  </span><br><span class="line">                ]  </span><br><span class="line">            ]  </span><br><span class="line"><span class="comment">-- FSCrumb for every level entered</span></span><br><span class="line"><span class="class"><span class="keyword">data</span> <span class="type">FSCrumb</span> = <span class="type">FSCrumb</span> <span class="type">Name</span> [<span class="type">FSItem</span>] [<span class="type">FSItem</span>] <span class="keyword">deriving</span> (<span class="type">Show</span>)</span></span><br><span class="line"><span class="comment">-- [FSCrumb] for trace</span></span><br><span class="line"><span class="class"><span class="keyword">type</span> <span class="type">FSZipper</span> = (<span class="type">FSItem</span>, [<span class="type">FSCrumb</span>])</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- go up the hierarchies</span></span><br><span class="line"><span class="title">fsUp</span> :: <span class="type">FSZipper</span> -&gt; <span class="type">Maybe</span> <span class="type">FSZipper</span></span><br><span class="line"><span class="title">fsUp</span> (focus, <span class="type">FSCrumb</span> name l r : bs) = <span class="type">Just</span> (<span class="type">Folder</span> name (l ++ [focus] ++ r), bs)</span><br><span class="line"><span class="title">fsUp</span> (_, []) = <span class="type">Nothing</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- find File or Folder in the current Folder</span></span><br><span class="line"><span class="title">fsTo</span> :: <span class="type">Name</span> -&gt; <span class="type">FSZipper</span> -&gt; <span class="type">Maybe</span> <span class="type">FSZipper</span></span><br><span class="line"><span class="title">fsTo</span> name (<span class="type">Folder</span> fname items, bs) = </span><br><span class="line">    <span class="keyword">case</span> break (nameIs name) items <span class="keyword">of</span> (l, cur:r) -&gt; <span class="type">Just</span> (cur, <span class="type">FSCrumb</span> fname l r : bs)</span><br><span class="line">                                      (_, [])    -&gt; <span class="type">Nothing</span> </span><br><span class="line"><span class="comment">-- check name</span></span><br><span class="line"><span class="title">nameIs</span> :: <span class="type">Name</span> -&gt; <span class="type">FSItem</span> -&gt; <span class="type">Bool</span></span><br><span class="line"><span class="title">nameIs</span> name (<span class="type">File</span> n _) = name == n</span><br><span class="line"><span class="title">nameIs</span> name (<span class="type">Folder</span> n _) = name == n </span><br><span class="line"></span><br><span class="line"><span class="comment">-- rename</span></span><br><span class="line"><span class="title">fsRename</span> :: <span class="type">Name</span> -&gt; <span class="type">FSZipper</span> -&gt; <span class="type">Maybe</span> <span class="type">FSZipper</span></span><br><span class="line"><span class="title">fsRename</span> newName (<span class="type">Folder</span> name items, bs) = <span class="type">Just</span> (<span class="type">Folder</span> newName items, bs)  </span><br><span class="line"><span class="title">fsRename</span> newName (<span class="type">File</span> name dat, bs) = <span class="type">Just</span> (<span class="type">File</span> newName dat, bs) </span><br><span class="line"></span><br><span class="line"><span class="type">Just</span> fst &lt;*&gt; (return (myDisk,[]) &gt;&gt;= fsTo <span class="string">&quot;pics&quot;</span> &gt;&gt;= fsTo <span class="string">&quot;skull_man(scary).bmp&quot;</span>)</span><br></pre></td></tr></table></figure></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/FP/" rel="tag"># FP</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/10/09/RT-with-Peter-Shirley/" rel="next" title="RT with Peter Shirley">
+                <i class="fa fa-chevron-left"></i> RT with Peter Shirley
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2020/10/03/6-828-xv6-Virtual-Memory/" rel="prev" title="[6.828] xv6 Virtual Memory">
+                [6.828] xv6 Virtual Memory <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+      <div id="sidebar-dimmer"></div>
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/%7C%7C%20archive">
+              
+                  <span class="site-state-item-count">26</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">12</span>
+                  <span class="site-state-item-name">categories</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">16</span>
+                  <span class="site-state-item-name">tags</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#monoid"><span class="nav-number">1.</span> <span class="nav-text">Monoid</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Silven Huang</span>
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

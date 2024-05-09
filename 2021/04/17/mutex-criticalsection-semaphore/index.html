@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon32.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon16.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="multithreading," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="介绍用于mutal exclusion的几个概念，并介绍几种implementation。最后列一下C++11多线程支持库，并举一个线程池的例子。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="mutex, criticalsection, semaphore">
+<meta property="og:url" content="https://htplt.github.io/2021/04/17/mutex-criticalsection-semaphore/index.html">
+<meta property="og:site_name" content="Output">
+<meta property="og:description" content="介绍用于mutal exclusion的几个概念，并介绍几种implementation。最后列一下C++11多线程支持库，并举一个线程池的例子。">
+<meta property="og:locale">
+<meta property="article:published_time" content="2021-04-17T08:09:01.000Z">
+<meta property="article:modified_time" content="2021-10-26T07:54:16.292Z">
+<meta property="article:author" content="Silven Huang">
+<meta property="article:tag" content="multithreading">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"hide","offset":12,"b2t":false,"scrollpercent":false,"onmobile":true},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://htplt.github.io/2021/04/17/mutex-criticalsection-semaphore/"/>
+
+
+
+
+
+  <title>mutex, criticalsection, semaphore | Output</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 7.2.0"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Output</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+            About
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+            Archives
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://htplt.github.io/2021/04/17/mutex-criticalsection-semaphore/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Output">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">mutex, criticalsection, semaphore</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2021-04-17T16:09:01+08:00">
+                2021-04-17
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/fundamental/" itemprop="url" rel="index">
+                    <span itemprop="name">fundamental</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>介绍用于<code>mutal exclusion</code>的几个概念，并介绍几种implementation。最后列一下C++11多线程支持库，并举一个线程池的例子。
+<span id="more"></span> ## Comcepts ### mutex 就是lock，用于mutual
+exclusion。mutex一般是系统调用。 ps:
+语言层面的<code>eastl::mutex</code>使用系统的critical section
+API，API中使用系统内核的mutex。 ### critical section
+临界区一般由mutex控制，在进入代码段前lock并在执行完后unlock。 ###
+semaphore
+信号量简单的理解就是有counter的mutex，同样也是系统调用。是一个共享的int变量<code>s</code>，值非负。只能通过<code>wait(s)</code>和<code>signal(s)</code>访问。
+- <strong>P</strong> <code>wait(s)</code> decrements <code>s</code> if
+<code>s</code> &gt; 0; if not, the process is suspended. -
+<strong>V</strong> <code>signal(s)</code> increments <code>s</code>.
+<code>wait(s)</code> and <code>signal(s)</code> are done atomically.</p>
+<h4 id="生产者消费者问题">生产者消费者问题</h4>
+<p>生产者生产对象给消费者，使用一个最大容量为<code>N</code>的队列通信。
+- 队列为空，消费者必须等待生产者生产 -
+队列为满，生产者必须等待消费者消费 用三个信号量解决这个问题： -
+<code>emptyCount</code> ：队列中的空余容量 - <code>fullCount</code> :
+队列中已用容量 - <code>useQueue</code> : 控制队列的访问（可用mutex）</p>
+<p>初始值<code>emptyCount = N</code>，<code>fullCount = 0</code>，<code>useQueue = 1</code>.
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//producer:</span></span><br><span class="line"><span class="built_in">P</span>(emptyCount);</span><br><span class="line"><span class="built_in">P</span>(useQueue);</span><br><span class="line"><span class="built_in">putItemIntoQueue</span>(item);</span><br><span class="line"><span class="built_in">V</span>(useQueue);</span><br><span class="line"><span class="built_in">V</span>(fullCount);</span><br><span class="line"></span><br><span class="line"><span class="comment">//consumer:</span></span><br><span class="line"><span class="built_in">P</span>(fullCount);</span><br><span class="line"><span class="built_in">P</span>(useQueue);</span><br><span class="line">Item = <span class="built_in">getItemFromQueue</span>();</span><br><span class="line"><span class="built_in">V</span>(useQueue);</span><br><span class="line"><span class="built_in">V</span>(emptyCount);</span><br></pre></td></tr></table></figure>
+<code>emptyCount</code>可能小于实际空余容量，<code>fullCount</code>可能小于实际使用容量。
+<code>emptyCount + fullCount &lt;= N</code>永远成立。 ### non-blocking,
+lock-free, wait-free - non-blocking :
+任何线程的suspension不会导致其他线程的failure或者suspension。 -
+lock-free : guaranteed system-wide progress(no starvation) - wait-free :
+guaranteed per-thread progress</p>
+<h2 id="implementation">Implementation</h2>
+<h3 id="test-and-set">test-and-set</h3>
+<p><code>test-and-set-lock(TSL)</code>可以由双端口存储器硬件实现，也可以由指令集在软件层面实现。
+<code>test-and-set</code>指令：对一个内存位置写入1(set)，并返回该位置原来的值。这一整套使用单指令(原子执行)。
+<code>while(test_and_set(&amp;lock) == 1)</code>可作为简单的<code>lock()</code>函数。当返回值为0时，则已获得锁，退出循环，否则继续忙等(spin
+lock)。 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//pseudo-code</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> LOCKED   1</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> UNLOCKED 0</span></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">test_and_set</span><span class="params">(<span class="type">int</span>&amp; lock)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="type">int</span> initial = lock;</span><br><span class="line">    lock = LOCKED;</span><br><span class="line">    <span class="keyword">return</span> initial;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//used as a spin lock</span></span><br><span class="line"><span class="keyword">volatile</span> <span class="type">int</span> lock = <span class="number">0</span>;</span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">critical</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">while</span>(<span class="built_in">test_and_set</span>(&amp;lock) == LOCKED);</span><br><span class="line">    <span class="comment">//[critical section]</span></span><br><span class="line">    lock = UNLOCKED;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure> ### test and test-and-set
+<em>在系统编程常用，应在高层的并发编程中避免，容易引发double-checked
+locking</em>
+<code>test_and_set</code>可能会导致忙锁的资源竞争(总线锁，频繁的原子访问内存导致的cache失效)，为了降低overhead使用<code>test and test-and-set</code>。
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Entry Protocol</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">EnterCritical</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">do</span> &#123;</span><br><span class="line">        <span class="keyword">while</span>(locked == <span class="literal">true</span>);</span><br><span class="line">    &#125; <span class="keyword">while</span>(<span class="built_in">test_and_set</span>(locked) == <span class="literal">true</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//if has short-circuit evaluation feature</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">EnterCritical</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">while</span>(locked == <span class="literal">true</span> || <span class="built_in">test_and_set</span>(locked) == <span class="literal">true</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Exit Protocol</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">ExitCritical</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    locked = <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure> ### fetch-and-add
+FAA是原子操作，原子地在一个内存位置并加上一个值，并返回旧值。可以用于实现信号量和互斥锁。C++11有<code>std::atomic&lt;T&gt;::fetch_add</code>。
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//x86 implementation</span></span><br><span class="line"><span class="comment">//C in GCC</span></span><br><span class="line"><span class="function"><span class="type">static</span> <span class="keyword">inline</span> <span class="type">int</span> <span class="title">fetch_and_add</span><span class="params">(<span class="type">int</span>* variable, <span class="type">int</span> value)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="function">__asm__ <span class="title">volatile</span><span class="params">(<span class="string">&quot;lock; xaddl %0, %1&quot;</span></span></span></span><br><span class="line"><span class="params"><span class="function">        : <span class="string">&quot;+r&quot;</span>(value), <span class="string">&quot;+m&quot;</span>(*variable) <span class="comment">// input + output</span></span></span></span><br><span class="line"><span class="params"><span class="function">        : <span class="comment">// no input-only</span></span></span></span><br><span class="line"><span class="params"><span class="function">        : <span class="string">&quot;memory&quot;</span></span></span></span><br><span class="line"><span class="params"><span class="function">    )</span></span>;</span><br><span class="line">    <span class="keyword">return</span> value;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure> ### load-link/store-conditional (LL/SC)
+也叫load-reserved/store-conditional(LR/SC)。LL和SC是多线程同步的一对指令。load-link返回一个内存位置的现有值，store-conditional只在LL之后该位置没有修改的情况下写入新值。LL/SC是指令集实现的。
+### compare-and-swap
+CAS指令，只在一个内存位置与指定值相同的情况下写入新值（原子执行），返回比较的结果（bool）。
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// pesudo-code</span></span><br><span class="line"><span class="function"><span class="type">bool</span> <span class="title">cas</span> <span class="params">(<span class="type">int</span>* p, <span class="type">int</span> oldVal, <span class="type">int</span> newVal)</span> <span class="comment">// atomic</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(*p != oldVal)</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    *p = newVal;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// example : atomic adder</span></span><br><span class="line"><span class="comment">// return the final value stored(not actual value)</span></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">add</span> <span class="params">(<span class="type">int</span>* p, <span class="type">int</span> a)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="type">bool</span> done = <span class="literal">false</span>;</span><br><span class="line">    <span class="keyword">while</span>(!done)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="type">int</span> value = *p; <span class="comment">// dont have to be atomic</span></span><br><span class="line">        done = <span class="built_in">cas</span>(p, value, value + a);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> value + a;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure> ## C++11 multithreading ### future
+提供访问异步操作结果的机制。<strong>not copyable</strong> -
+使用(由<code>async</code>,<code>packaged_task</code>,<code>promise</code>创建的)异步操作可以提供一个<code>future</code>
+-
+异步操作的创建者可以<code>valid()</code>，<code>wait()</code>或者<code>get()</code>，如果异步操作还没有提供值就会阻塞
+-
+当异步操作在准备好返回值给创建者的时候，可以使用与创建者的<code>future</code>关联的<code>promise::set_value</code></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">future.<span class="built_in">get</span>() <span class="comment">//等待异步执行结束获取返回结果，只能调用一次</span></span><br><span class="line">future.<span class="built_in">wait</span>() <span class="comment">//等待异步执行完成，无返回值。</span></span><br><span class="line">future.<span class="built_in">wait_for</span>()</span><br><span class="line">future.<span class="built_in">wait_until</span>()<span class="comment">//超时等待返回结果，返回std::future_status状态</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">enum class</span> <span class="title class_">future_status</span> </span><br><span class="line">&#123;</span><br><span class="line">    ready,</span><br><span class="line">    timeout,</span><br><span class="line">    deferred <span class="comment">//contains deferred function</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<h3 id="async">async</h3>
+<p>异步运行一个可调用对象<code>f</code>，返回<code>future</code>。<code>launch</code>可以指定是此线程lazy或者新线程异步。
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// future from an async()</span></span><br><span class="line">std::future&lt;<span class="type">int</span>&gt; f2 = std::<span class="built_in">async</span>(std::launch::async, [] &#123; <span class="keyword">return</span> <span class="number">8</span>; &#125;);</span><br><span class="line"></span><br><span class="line"><span class="keyword">enum class</span> <span class="title class_">launch</span></span><br><span class="line">&#123;</span><br><span class="line">    async, <span class="comment">//execute in new thread</span></span><br><span class="line">    deferred, <span class="comment">//(lazy evaluation) in the calling thread </span></span><br><span class="line">    <span class="comment">/* implementation-defined */</span></span><br><span class="line">    <span class="comment">//default ： async | deferred</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure> ### packaged_task
+提供<strong>可以</strong>被异步invoke的可调用对象Callable(function,
+lambda expression, bind expression, or another function
+object)的包装。返回<code>future</code>(值或异常)<code>packaged_task.get_future()</code>。<strong>not
+copyable</strong> <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// future from a packaged_task</span></span><br><span class="line"><span class="function">std::packaged_task&lt;<span class="title">int</span><span class="params">()</span>&gt; <span class="title">task</span><span class="params">([] &#123; <span class="keyword">return</span> <span class="number">7</span>; &#125;)</span></span>; <span class="comment">// wrap the function</span></span><br><span class="line">std::future&lt;<span class="type">int</span>&gt; f1 = task.<span class="built_in">get_future</span>();  <span class="comment">// get a future</span></span><br><span class="line"><span class="function">std::thread <span class="title">t</span><span class="params">(std::move(task))</span></span>; <span class="comment">// launch on a thread</span></span><br></pre></td></tr></table></figure> ### promise <code>promise</code>
+是promise-future通信的推进端，设置<code>promise</code>状态与获取<code>future</code>状态同步。<strong>not
+copyable</strong> <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// future from a promise</span></span><br><span class="line">std::promise&lt;<span class="type">int</span>&gt; p;</span><br><span class="line">std::future&lt;<span class="type">int</span>&gt; f3 = p.<span class="built_in">get_future</span>();</span><br><span class="line">std::<span class="built_in">thread</span>([&amp;p] &#123; p.<span class="built_in">set_value_at_thread_exit</span>(<span class="number">9</span>); &#125;).<span class="built_in">detach</span>();</span><br></pre></td></tr></table></figure> ### condition_variable
+同步原语，用于阻塞一个或多个线程，直到另一个线程修改共享变量(the
+condition)，并<code>notify</code>(condition_variable)。 <strong>not
+copyable, not movable</strong> #### 线程修改变量 -
+获得<code>mutex</code>(一般通过<code>lock_guard</code>) -
+在获得锁期间做修改 -
+<code>notify_one()</code>或<code>notify_all()</code>(无需在获得锁期间)</p>
+<p>即使共享变量是<code>atomic</code>的，也必须在获得<code>mutex</code>的情况下修改，来保证等待线程能获得正确结果
+#### 线程等待变量 - 获得<code>unique_lock&lt;mutex&gt;</code> -
+检查共享变量(the condition)，防止已经被修改并且<code>notify</code> -
+<code>wait()</code>,<code>wait_for()</code>或<code>wait_until()</code>，原子地释放锁，并暂停线程执行。
+- 当<code>condition_variable</code>
+<code>notify</code>后，原子地获得<code>mutex</code></p>
+<p><code>condition_variable</code>只与<code>unique_lock&lt;mutex&gt;</code>配合(效率最大化)。<code>condition_variable_any</code>可与其他锁对象配合。
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">condition_variable.<span class="built_in">wait</span>(unique_lock&lt;mutex&gt;&amp; lock)</span><br><span class="line"><span class="comment">//unlock mutex, block thread, wait for notify</span></span><br><span class="line">condition_variable.<span class="built_in">wait</span>(unique_lock&lt;mutex&gt;&amp; lock, Predicate pred)</span><br><span class="line"><span class="comment">//while (!pred()) wait(lock);</span></span><br></pre></td></tr></table></figure> ## LLVM ThreadPool
+llvm里的一个简单的线程池，异步并行地执行一定数量的线程。<code>async</code>用来向池中添加任务。使用了两个<code>condition_variable</code>，一个用来控制任务序列的访问，一个用来标记任务队列全部完成。
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">ThreadPool</span> &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">  <span class="keyword">using</span> TaskTy = std::function&lt;<span class="built_in">void</span>()&gt;;</span><br><span class="line">  <span class="keyword">using</span> PackagedTaskTy = std::packaged_task&lt;<span class="built_in">void</span>()&gt;;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/// Construct a pool using the hardware strategy \p S for mapping hardware</span></span><br><span class="line">  <span class="comment">/// execution resources (threads, cores, CPUs)</span></span><br><span class="line">  <span class="comment">/// Defaults to using the maximum execution resources in the system, but</span></span><br><span class="line">  <span class="comment">/// accounting for the affinity mask.</span></span><br><span class="line">  <span class="built_in">ThreadPool</span>(ThreadPoolStrategy S = <span class="built_in">hardware_concurrency</span>());</span><br><span class="line"></span><br><span class="line">  <span class="comment">/// Blocking destructor: the pool will wait for all the threads to complete.</span></span><br><span class="line">  ~<span class="built_in">ThreadPool</span>();</span><br><span class="line"></span><br><span class="line">  <span class="comment">/// Asynchronous submission of a task to the pool. The returned future can be</span></span><br><span class="line">  <span class="comment">/// used to wait for the task to finish and is *non-blocking* on destruction.</span></span><br><span class="line">  <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Function, <span class="keyword">typename</span>... Args&gt;</span><br><span class="line">  <span class="function"><span class="keyword">inline</span> std::shared_future&lt;<span class="type">void</span>&gt; <span class="title">async</span><span class="params">(Function &amp;&amp;F, Args &amp;&amp;... ArgList)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">auto</span> Task =</span><br><span class="line">        std::<span class="built_in">bind</span>(std::forward&lt;Function&gt;(F), std::forward&lt;Args&gt;(ArgList)...);</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">asyncImpl</span>(std::<span class="built_in">move</span>(Task));</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/// Asynchronous submission of a task to the pool. The returned future can be</span></span><br><span class="line">  <span class="comment">/// used to wait for the task to finish and is *non-blocking* on destruction.</span></span><br><span class="line">  <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Function&gt;</span><br><span class="line">  <span class="function"><span class="keyword">inline</span> std::shared_future&lt;<span class="type">void</span>&gt; <span class="title">async</span><span class="params">(Function &amp;&amp;F)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">asyncImpl</span>(std::forward&lt;Function&gt;(F));</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/// Blocking wait for all the threads to complete and the queue to be empty.</span></span><br><span class="line">  <span class="comment">/// It is an error to try to add new tasks while blocking on this call.</span></span><br><span class="line">  <span class="function"><span class="type">void</span> <span class="title">wait</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="type">unsigned</span> <span class="title">getThreadCount</span><span class="params">()</span> <span class="type">const</span> </span>&#123; <span class="keyword">return</span> ThreadCount; &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/// Returns true if the current thread is a worker thread of this thread pool.</span></span><br><span class="line">  <span class="function"><span class="type">bool</span> <span class="title">isWorkerThread</span><span class="params">()</span> <span class="type">const</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">  <span class="function"><span class="type">bool</span> <span class="title">workCompletedUnlocked</span><span class="params">()</span> </span>&#123; <span class="keyword">return</span> !ActiveThreads &amp;&amp; Tasks.<span class="built_in">empty</span>(); &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/// Asynchronous submission of a task to the pool. The returned future can be</span></span><br><span class="line">  <span class="comment">/// used to wait for the task to finish and is *non-blocking* on destruction.</span></span><br><span class="line">  <span class="function">std::shared_future&lt;<span class="type">void</span>&gt; <span class="title">asyncImpl</span><span class="params">(TaskTy F)</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/// Threads in flight</span></span><br><span class="line">  std::vector&lt;llvm::thread&gt; Threads;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/// Tasks waiting for execution in the pool.</span></span><br><span class="line">  std::queue&lt;PackagedTaskTy&gt; Tasks;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/// Locking and signaling for accessing the Tasks queue.</span></span><br><span class="line">  std::mutex QueueLock;</span><br><span class="line">  std::condition_variable QueueCondition;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/// Signaling for job completion</span></span><br><span class="line">  std::condition_variable CompletionCondition;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/// Keep track of the number of thread actually busy</span></span><br><span class="line">  <span class="type">unsigned</span> ActiveThreads = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">if</span> LLVM_ENABLE_THREADS <span class="comment">// avoids warning for unused variable</span></span></span><br><span class="line">  <span class="comment">/// Signal for the destruction of the pool, asking thread to exit.</span></span><br><span class="line">  <span class="type">bool</span> EnableFlag = <span class="literal">true</span>;</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line"></span><br><span class="line">  <span class="type">unsigned</span> ThreadCount;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+具体的实现区分了是否使用多线程，如果开启了多线程，则用<code>vector</code>里的线程不断的找任务队列里的任务执行。
+-
+加入任务时，<code>QueueCondition.notify_one()</code>唤醒一个正在等待任务的线程
+-
+工作线程内，在任务队列不空的时候，不断取任务执行。注意一下工作线程执行完任务后，都要减少<code>ActiveThreads</code>，并判断自己是不是最后一个Active的线程以及任务队列是否已空，如果是，那么发出<code>CompletionCondition.notify_all()</code>提醒线程池的<code>ThreadPool::wait()</code>
+-
+<code>wait()</code>用于等待任务队列清空(但并不销毁线程池)，清空后的线程池里工作线程会阻塞在
+<code>QueueCondition.wait(LockGuard, [&amp;] &#123; return !EnableFlag || !Tasks.empty(); &#125;);</code>
+-
+线程池析构时，先将<code>EnableFlag</code>置false，然后使用<code>QueueCondition.notify_all()</code>唤醒所有还在等待任务的线程，接着等待工作线程把任务队列清空后销毁线程(<code>join()</code>)。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br></pre></td><td class="code"><pre><span class="line">ThreadPool::<span class="built_in">ThreadPool</span>(ThreadPoolStrategy S)</span><br><span class="line">    : <span class="built_in">ThreadCount</span>(S.<span class="built_in">compute_thread_count</span>()) &#123;</span><br><span class="line">  <span class="comment">// Create ThreadCount threads that will loop forever, wait on QueueCondition</span></span><br><span class="line">  <span class="comment">// for tasks to be queued or the Pool to be destroyed.</span></span><br><span class="line">  Threads.<span class="built_in">reserve</span>(ThreadCount);</span><br><span class="line">  <span class="keyword">for</span> (<span class="type">unsigned</span> ThreadID = <span class="number">0</span>; ThreadID &lt; ThreadCount; ++ThreadID) &#123;</span><br><span class="line">    Threads.<span class="built_in">emplace_back</span>([S, ThreadID, <span class="keyword">this</span>] &#123;</span><br><span class="line">      S.<span class="built_in">apply_thread_strategy</span>(ThreadID);</span><br><span class="line">      <span class="keyword">while</span> (<span class="literal">true</span>) &#123;</span><br><span class="line">        PackagedTaskTy Task;</span><br><span class="line">        &#123;</span><br><span class="line">          std::unique_lock&lt;std::mutex&gt; <span class="built_in">LockGuard</span>(QueueLock);</span><br><span class="line">          <span class="comment">// Wait for tasks to be pushed in the queue</span></span><br><span class="line">          QueueCondition.<span class="built_in">wait</span>(LockGuard,</span><br><span class="line">                              [&amp;] &#123; <span class="keyword">return</span> !EnableFlag || !Tasks.<span class="built_in">empty</span>(); &#125;);</span><br><span class="line">          <span class="comment">// Exit condition</span></span><br><span class="line">          <span class="keyword">if</span> (!EnableFlag &amp;&amp; Tasks.<span class="built_in">empty</span>())</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">          <span class="comment">// Yeah, we have a task, grab it and release the lock on the queue</span></span><br><span class="line"></span><br><span class="line">          <span class="comment">// We first need to signal that we are active before popping the queue</span></span><br><span class="line">          <span class="comment">// in order for wait() to properly detect that even if the queue is</span></span><br><span class="line">          <span class="comment">// empty, there is still a task in flight.</span></span><br><span class="line">          ++ActiveThreads;</span><br><span class="line">          Task = std::<span class="built_in">move</span>(Tasks.<span class="built_in">front</span>());</span><br><span class="line">          Tasks.<span class="built_in">pop</span>();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// Run the task we just grabbed</span></span><br><span class="line">        <span class="built_in">Task</span>();</span><br><span class="line"></span><br><span class="line">        <span class="type">bool</span> Notify;</span><br><span class="line">        &#123;</span><br><span class="line">          <span class="comment">// Adjust `ActiveThreads`, in case someone waits on ThreadPool::wait()</span></span><br><span class="line">          std::lock_guard&lt;std::mutex&gt; <span class="built_in">LockGuard</span>(QueueLock);</span><br><span class="line">          --ActiveThreads;</span><br><span class="line">          Notify = <span class="built_in">workCompletedUnlocked</span>();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// Notify task completion if this is the last active thread, in case</span></span><br><span class="line">        <span class="comment">// someone waits on ThreadPool::wait().</span></span><br><span class="line">        <span class="keyword">if</span> (Notify)</span><br><span class="line">          CompletionCondition.<span class="built_in">notify_all</span>();</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">ThreadPool::wait</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="comment">// Wait for all threads to complete and the queue to be empty</span></span><br><span class="line">  <span class="function">std::unique_lock&lt;std::mutex&gt; <span class="title">LockGuard</span><span class="params">(QueueLock)</span></span>;</span><br><span class="line">  CompletionCondition.<span class="built_in">wait</span>(LockGuard, [&amp;] &#123; <span class="keyword">return</span> <span class="built_in">workCompletedUnlocked</span>(); &#125;);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">bool</span> <span class="title">ThreadPool::isWorkerThread</span><span class="params">()</span> <span class="type">const</span> </span>&#123;</span><br><span class="line">  llvm::thread::id CurrentThreadId = llvm::this_thread::<span class="built_in">get_id</span>();</span><br><span class="line">  <span class="keyword">for</span> (<span class="type">const</span> llvm::thread &amp;Thread : Threads)</span><br><span class="line">    <span class="keyword">if</span> (CurrentThreadId == Thread.<span class="built_in">get_id</span>())</span><br><span class="line">      <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">  <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function">std::shared_future&lt;<span class="type">void</span>&gt; <span class="title">ThreadPool::asyncImpl</span><span class="params">(TaskTy Task)</span> </span>&#123;</span><br><span class="line">  <span class="comment">/// Wrap the Task in a packaged_task to return a future object.</span></span><br><span class="line">  <span class="function">PackagedTaskTy <span class="title">PackagedTask</span><span class="params">(std::move(Task))</span></span>;</span><br><span class="line">  <span class="keyword">auto</span> Future = PackagedTask.<span class="built_in">get_future</span>();</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="comment">// Lock the queue and push the new task</span></span><br><span class="line">    <span class="function">std::unique_lock&lt;std::mutex&gt; <span class="title">LockGuard</span><span class="params">(QueueLock)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Don&#x27;t allow enqueueing after disabling the pool</span></span><br><span class="line">    <span class="built_in">assert</span>(EnableFlag &amp;&amp; <span class="string">&quot;Queuing a thread during ThreadPool destruction&quot;</span>);</span><br><span class="line"></span><br><span class="line">    Tasks.<span class="built_in">push</span>(std::<span class="built_in">move</span>(PackagedTask));</span><br><span class="line">  &#125;</span><br><span class="line">  QueueCondition.<span class="built_in">notify_one</span>();</span><br><span class="line">  <span class="keyword">return</span> Future.<span class="built_in">share</span>();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// The destructor joins all threads, waiting for completion.</span></span><br><span class="line">ThreadPool::~<span class="built_in">ThreadPool</span>() &#123;</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="function">std::unique_lock&lt;std::mutex&gt; <span class="title">LockGuard</span><span class="params">(QueueLock)</span></span>;</span><br><span class="line">    EnableFlag = <span class="literal">false</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  QueueCondition.<span class="built_in">notify_all</span>();</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">auto</span> &amp;Worker : Threads)</span><br><span class="line">    Worker.<span class="built_in">join</span>();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如果是单线程，就只用<code>launch::deferred</code>的<code>async</code>在本线程里lazy
+evaluation。为了和多线程统一，就用<code>package_task</code>包装<code>future.get()</code>后加入任务队列。
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// No threads are launched, issue a warning if ThreadCount is not 0</span></span><br><span class="line">ThreadPool::<span class="built_in">ThreadPool</span>(ThreadPoolStrategy S)</span><br><span class="line">    : <span class="built_in">ThreadCount</span>(S.<span class="built_in">compute_thread_count</span>()) &#123;</span><br><span class="line">  <span class="keyword">if</span> (ThreadCount != <span class="number">1</span>) &#123;</span><br><span class="line">    <span class="built_in">errs</span>() &lt;&lt; <span class="string">&quot;Warning: request a ThreadPool with &quot;</span> &lt;&lt; ThreadCount</span><br><span class="line">           &lt;&lt; <span class="string">&quot; threads, but LLVM_ENABLE_THREADS has been turned off\n&quot;</span>;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">ThreadPool::wait</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="comment">// Sequential implementation running the tasks</span></span><br><span class="line">  <span class="keyword">while</span> (!Tasks.<span class="built_in">empty</span>()) &#123;</span><br><span class="line">    <span class="keyword">auto</span> Task = std::<span class="built_in">move</span>(Tasks.<span class="built_in">front</span>());</span><br><span class="line">    Tasks.<span class="built_in">pop</span>();</span><br><span class="line">    <span class="built_in">Task</span>();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function">std::shared_future&lt;<span class="type">void</span>&gt; <span class="title">ThreadPool::asyncImpl</span><span class="params">(TaskTy Task)</span> </span>&#123;</span><br><span class="line">  <span class="comment">// Get a Future with launch::deferred execution using std::async</span></span><br><span class="line">  <span class="keyword">auto</span> Future = std::<span class="built_in">async</span>(std::launch::deferred, std::<span class="built_in">move</span>(Task)).<span class="built_in">share</span>();</span><br><span class="line">  <span class="comment">// Wrap the future so that both ThreadPool::wait() can operate and the</span></span><br><span class="line">  <span class="comment">// returned future can be sync&#x27;ed on.</span></span><br><span class="line">  <span class="function">PackagedTaskTy <span class="title">PackagedTask</span><span class="params">([Future]() &#123; Future.get(); &#125;)</span></span>;</span><br><span class="line">  Tasks.<span class="built_in">push</span>(std::<span class="built_in">move</span>(PackagedTask));</span><br><span class="line">  <span class="keyword">return</span> Future;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">ThreadPool::~<span class="built_in">ThreadPool</span>() &#123; <span class="built_in">wait</span>(); &#125;</span><br></pre></td></tr></table></figure></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/multithreading/" rel="tag"># multithreading</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2021/03/30/Inequalities/" rel="next" title="Inequalities">
+                <i class="fa fa-chevron-left"></i> Inequalities
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2021/05/25/Template-index-sequence-parameter-pack-fold-expression/" rel="prev" title="[Template] index_sequence, parameter pack, fold expression">
+                [Template] index_sequence, parameter pack, fold expression <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+      <div id="sidebar-dimmer"></div>
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/%7C%7C%20archive">
+              
+                  <span class="site-state-item-count">26</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">12</span>
+                  <span class="site-state-item-name">categories</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">16</span>
+                  <span class="site-state-item-name">tags</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%94%9F%E4%BA%A7%E8%80%85%E6%B6%88%E8%B4%B9%E8%80%85%E9%97%AE%E9%A2%98"><span class="nav-number">1.</span> <span class="nav-text">生产者消费者问题</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#implementation"><span class="nav-number"></span> <span class="nav-text">Implementation</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#test-and-set"><span class="nav-number"></span> <span class="nav-text">test-and-set</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#async"><span class="nav-number"></span> <span class="nav-text">async</span></a></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Silven Huang</span>
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+
+
+  
+
+  
+
+</body>
+</html>

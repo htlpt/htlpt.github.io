@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon32.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon16.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="CG," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="对渲染流水线的认识永无止境，总会有没有注意过的细节。也许只有每样都自己做过，适应过不同的场景才会有所心得吧。现在只根据搜集到的资料和初步的理解做一下归纳，尽量按照发展历史的顺序。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Rendering Pipelines">
+<meta property="og:url" content="https://htplt.github.io/2021/08/14/Rendering-Pipelines/index.html">
+<meta property="og:site_name" content="Output">
+<meta property="og:description" content="对渲染流水线的认识永无止境，总会有没有注意过的细节。也许只有每样都自己做过，适应过不同的场景才会有所心得吧。现在只根据搜集到的资料和初步的理解做一下归纳，尽量按照发展历史的顺序。">
+<meta property="og:locale">
+<meta property="article:published_time" content="2021-08-14T04:46:38.000Z">
+<meta property="article:modified_time" content="2021-10-23T07:41:06.274Z">
+<meta property="article:author" content="Silven Huang">
+<meta property="article:tag" content="CG">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"hide","offset":12,"b2t":false,"scrollpercent":false,"onmobile":true},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://htplt.github.io/2021/08/14/Rendering-Pipelines/"/>
+
+
+
+
+
+  <title>Rendering Pipelines | Output</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 7.2.0"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Output</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+            About
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+            Archives
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://htplt.github.io/2021/08/14/Rendering-Pipelines/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Output">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Rendering Pipelines</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2021-08-14T12:46:38+08:00">
+                2021-08-14
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/pipelines/" itemprop="url" rel="index">
+                    <span itemprop="name">pipelines</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>对渲染流水线的认识永无止境，总会有没有注意过的细节。也许只有每样都自己做过，适应过不同的场景才会有所心得吧。现在只根据搜集到的资料和初步的理解做一下归纳，尽量按照发展历史的顺序。
+<span id="more"></span> ## Forward 最基础的Forward管线(主要阶段)： -
+<strong>vertex</strong>-&gt;<strong>fragment</strong>-&gt;<strong>z-test</strong>-&gt;<strong>alpha
+blend</strong></p>
+<p>Z-test在frag光照计算后进行，借助硬件的GPU的early-Z(将Z-test提前到frag之前)，可以避免一些overdraw。现在的做法一般是加入一个Z-prepass，frag部分为空，只写入深度。在之后的多pass渲染(一个pass几盏灯)中借助early-Z(Z-test设为Equal)，就可以避免光照的重复计算。这样对于M个object和N个光源，大致计算复杂度为O(MN)。加入Z-prepass新的性能问题依然存在，即每个pass的draw
+call，以及重复执行的vertex shader。</p>
+<h2 id="deferred">Deferred</h2>
+<p>在很多场景中，往往局部光源只对很少一部分物体有影响，但在普通的多pass的Forward中，每个(或每几个)光源需要一个单独pass，并且还需要在每个pass里测试所有物体来shade。这会带来极大的性能消耗。随着MRT(Multi-Render
+Target)技术的支持，Deferred应运而生。</p>
+<p><strong>Pass 1: geometry pass</strong> - Write visible geometry
+information to G-buffer</p>
+<p><strong>Pass 2: shading pass</strong> For each G-buffer sample,
+compute shading - Read G-buffer data for current sample - Accumulate
+contribution of all lights - Output final surface colo</p>
+<p>Deferred解耦了物体绘制(geometry)和光照计算(shading)。在第一个pass中写入G-buffer，通常是包含depth，normal，albedo，roughness，specular和metallic的多张贴图。对于每个(或每几个)光源进行一个draw
+call，这样渲染所有pixel而不是object，这样所有物体只绘制一次(geometry
+pass)，复杂度降为O(M+N)。G-buffer还可以被用于其他平面空间的效果，比如SSAO，SSR等。但是G-buffer会占用大量显存(geometry
+pass中采样texture写入G-buffer，每个shading
+pass中采样G-buffer)，对显存带宽的要求极高。</p>
+<h2 id="deferred-lighting">Deferred Lighting</h2>
+<p>为了解决Deferred中G-buffer的带宽问题。Deferred lighting将每个shading
+pass中的采样合并。shading pass中把写入各个材质无关的光照分量写入lighting
+buffer，在最后额外加一个pass来采样lighting
+buffer和G-buffer计算光照。这样G-buffer只采样一次，可以减少显存带宽。但是G-buffer的数量便成为了光照分量的数量，对于光照分量难以分离的菲涅尔项需要其他近似。</p>
+<h2 id="tile-based-deferred-tbdr">Tile-Based Deferred (TBDR)</h2>
+<p>为了继续解耦物体绘制和光照计算，出现了tile-based的方法。在geometry
+pass之后加入light
+culling，把屏幕空间分成多个tile(视锥体里是多个棱台)。在compute
+shader中计算对每个tile有贡献的lightlist，接着可以直接计算该tile中fragment的光照。TBDR和Deferred
+Lighting相比，同样也读取了一次材质属性，但是大大减少了light
+pass的数量(只是用动态循环来改善)。</p>
+<h2 id="forward">Forward+</h2>
+<p>Forward+是light culling在Forward管线中的体现。light
+culling一般位于Z-prepass之后。之后需要在shading
+pass里根据fragment所在的tile索引light list。</p>
+<h2 id="d-cullingz-binningfor-tbdr-f">2.5D Culling/Z-Binning(for TBDR
+&amp; F+)</h2>
+<p>TBDR和Forward+对于光源的剔除都不够精确，因为culling是逐tile而不是逐pixel的，另外场景中的depth也不一定连续，在<span
+class="math inline">\([z_{min},z_{max}]\)</span>的区间内会有很多深度范围可能没有像素。因此有2.5D
+Culling来判断相交：把当前tile的depth区间分成32段(刚好是一个uint32)，再把tile里每个像素的depth映射到其中一段，然后写入一个depthMask，然后根据light
+bounding
+box，也把它的深度映射成一个lightMask，根据<code>depthMask &amp; lightMask == 0</code>来判断一个tile是否真的和一个light相交。</p>
+<h2 id="cluster-based-cbdrcbfr">Cluster-based (CBDR/CBFR)</h2>
+<p>对于视锥体空间划分小voxel(cluster)做光源剔除，可以结合deferred和forward
+- divide world into voxels (Texture3D) - calculate visible lights for
+each voxels in compute shader(sphere, plane intersect) - determine the
+Voxel that the frag is in shaders</p>
+<p>具体的存储结构如下： - <code>Texture3D</code> :
+用于存储每个cluster上的光源的起始位置和光源数量 -
+<code>UAV Buffer</code> ：存储每个光源的具体索引，UAV中的offset和num
+lights由(1)决定 - <code>Constant Buffer</code> ：存储具体的光源数据</p>
+<h2 id="visibility-bufferdeferred-texturing">Visibility Buffer/Deferred
+Texturing</h2>
+<p>visibility buffer在geometry
+pass不渲染G-buffer，只写入每个pixel对应的instanceID和triangleID，然后在compute
+shader里根据这两个index，索引材质id，并以屏幕空间的tile为单位做材质的合批，生成worklist。最后在shading
+pass(compute shader)中，根据work
+list和vbuffer，手动计算各种vertex属性插值、miplevel做软光栅。对比之前的TBDR，减少了G-buffer的带宽，也减少了材质的切换(有了worklist)。</p>
+<p>这一方法在2013年被提出后，随着GPU的通用计算能力发展，APIz中各种ExecuteIndirect和MultiDrawIndirect，在现代GPU
+Driven Pipeline中，在heavy mesh的场景中大放异彩。Deferred
+Texturing则是在geometry pass里写入materialID，到之后的shading
+pass里再索引，同样也需要材质合批。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/CG/" rel="tag"># CG</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2021/06/02/Template-type-traits/" rel="next" title="[Template] type_traits">
+                <i class="fa fa-chevron-left"></i> [Template] type_traits
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2021/09/29/What-is-an-RKHS-1/" rel="prev" title="What is an RKHS [1]">
+                What is an RKHS [1] <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+      <div id="sidebar-dimmer"></div>
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/%7C%7C%20archive">
+              
+                  <span class="site-state-item-count">26</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">12</span>
+                  <span class="site-state-item-name">categories</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">16</span>
+                  <span class="site-state-item-name">tags</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#deferred"><span class="nav-number">1.</span> <span class="nav-text">Deferred</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#deferred-lighting"><span class="nav-number">2.</span> <span class="nav-text">Deferred Lighting</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#tile-based-deferred-tbdr"><span class="nav-number">3.</span> <span class="nav-text">Tile-Based Deferred (TBDR)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#forward"><span class="nav-number">4.</span> <span class="nav-text">Forward+</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#d-cullingz-binningfor-tbdr-f"><span class="nav-number">5.</span> <span class="nav-text">2.5D Culling&#x2F;Z-Binning(for TBDR
+&amp; F+)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#cluster-based-cbdrcbfr"><span class="nav-number">6.</span> <span class="nav-text">Cluster-based (CBDR&#x2F;CBFR)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#visibility-bufferdeferred-texturing"><span class="nav-number">7.</span> <span class="nav-text">Visibility Buffer&#x2F;Deferred
+Texturing</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Silven Huang</span>
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon32.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon16.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="template," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="USRefl用99行完成了C++的静态反射，集合了大量C++14,17,20的优秀特性，也有诸多元编程技巧值得学习。我打算以这个.h为模板，DFS式学习模板语法和新标准特性。这此围绕ElemList展开。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="[Template] index_sequence, parameter pack, fold expression">
+<meta property="og:url" content="https://htplt.github.io/2021/05/25/Template-index-sequence-parameter-pack-fold-expression/index.html">
+<meta property="og:site_name" content="Output">
+<meta property="og:description" content="USRefl用99行完成了C++的静态反射，集合了大量C++14,17,20的优秀特性，也有诸多元编程技巧值得学习。我打算以这个.h为模板，DFS式学习模板语法和新标准特性。这此围绕ElemList展开。">
+<meta property="og:locale">
+<meta property="og:image" content="https://htplt.github.io/2021/05/25/Template-index-sequence-parameter-pack-fold-expression/stdinvoke.jpg">
+<meta property="article:published_time" content="2021-05-25T09:03:26.000Z">
+<meta property="article:modified_time" content="2021-05-31T08:33:53.747Z">
+<meta property="article:author" content="Silven Huang">
+<meta property="article:tag" content="template">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://htplt.github.io/2021/05/25/Template-index-sequence-parameter-pack-fold-expression/stdinvoke.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"hide","offset":12,"b2t":false,"scrollpercent":false,"onmobile":true},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://htplt.github.io/2021/05/25/Template-index-sequence-parameter-pack-fold-expression/"/>
+
+
+
+
+
+  <title>[Template] index_sequence, parameter pack, fold expression | Output</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 7.2.0"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Output</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+            About
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+            Archives
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://htplt.github.io/2021/05/25/Template-index-sequence-parameter-pack-fold-expression/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Output">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">[Template] index_sequence, parameter pack, fold expression</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2021-05-25T17:03:26+08:00">
+                2021-05-25
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/" itemprop="url" rel="index">
+                    <span itemprop="name">C++</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>USRefl用99行完成了C++的静态反射，集合了大量C++14,17,20的优秀特性，也有诸多元编程技巧值得学习。我打算以这个.h为模板，DFS式学习模板语法和新标准特性。这此围绕<code>ElemList</code>展开。
+<span id="more"></span> ## std::index_sequence &amp; std::tuple
+<code>make_index_sequence&lt;N&gt;()</code>由编译器内部在编译期间实现的0,1,2...N-1，并不是基于现有的元编程的逻辑。C++14
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt; <span class="keyword">class</span> <span class="title class_">T</span>, T... Ints &gt;</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">integer_sequence</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="type">size_t</span>... Ints&gt;</span><br><span class="line"><span class="keyword">using</span> index_sequence = std::integer_sequence&lt;<span class="type">size_t</span>, Ints...&gt;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="type">size_t</span> ...N&gt;</span></span><br><span class="line"><span class="function"><span class="type">static</span> <span class="keyword">constexpr</span> <span class="keyword">auto</span> <span class="title">square_nums</span><span class="params">(<span class="type">size_t</span> index, std::index_sequence&lt;N...&gt;)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">constexpr</span> <span class="keyword">auto</span> nums = std::array&#123;N * N ...&#125;;</span><br><span class="line">    <span class="keyword">return</span> nums[index];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="type">size_t</span> N&gt;</span></span><br><span class="line"><span class="function"><span class="keyword">constexpr</span> <span class="type">static</span> <span class="keyword">auto</span> <span class="title">const_nums</span><span class="params">(<span class="type">size_t</span> index)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">square_nums</span>(index, std::make_index_sequence&lt;N&gt;&#123;&#125;);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="built_in">static_assert</span>(<span class="built_in">const_nums</span>&lt;<span class="number">101</span>&gt;(<span class="number">100</span>) == <span class="number">100</span> * <span class="number">100</span>);</span><br></pre></td></tr></table></figure> index_sequence 的例子，tuple的遍历打印 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> Tuple, <span class="keyword">typename</span> Func, <span class="type">size_t</span> ...N&gt;</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">func_call_tuple</span><span class="params">(<span class="type">const</span> Tuple&amp; t, Func&amp;&amp; func, std::index_sequence&lt;N...&gt;)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	std::initializer_list&lt;<span class="type">int</span>&gt;&#123;(<span class="built_in">func</span>(std::<span class="built_in">get</span>&lt;N&gt;(t)), <span class="number">0</span>)...&#125;;</span><br><span class="line">    <span class="comment">// (,..,)expression :  c=(a=1,b); -&gt; c = b;</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> ...Args, <span class="keyword">typename</span> Func&gt;</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">travel_tuple</span><span class="params">(<span class="type">const</span> std::tuple&lt;Args...&gt;&amp; t, Func&amp;&amp; func)</span> </span>&#123;</span><br><span class="line">	<span class="built_in">func_call_tuple</span>(t, std::forward&lt;Func&gt;(func), std::make_index_sequence&lt;<span class="keyword">sizeof</span>...(Args)&gt;&#123;&#125;);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">auto</span> t = std::<span class="built_in">make_tuple</span>(<span class="number">1</span>, <span class="number">4.56</span>, <span class="string">&quot;happen lee&quot;</span>);</span><br><span class="line"><span class="built_in">travel_tuple</span>(t, [](<span class="keyword">auto</span>&amp;&amp; item) &#123; <span class="comment">//auto in lambda params, C++14</span></span><br><span class="line">    std::cout &lt;&lt; item &lt;&lt; <span class="string">&quot;, &quot;</span>;</span><br><span class="line">    &#125;);</span><br></pre></td></tr></table></figure> ###
+std::apply (C++17) <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">class</span> <span class="title class_">F</span>, <span class="keyword">class</span> <span class="title class_">Tuple</span>&gt;</span><br><span class="line"><span class="function"><span class="keyword">constexpr</span> <span class="keyword">decltype</span>(<span class="keyword">auto</span>) <span class="title">apply</span><span class="params">(F&amp;&amp; f, Tuple&amp;&amp; t)</span></span>;</span><br></pre></td></tr></table></figure>
+用<code>std::tuple</code>的内容作为参数<code>std::invoke</code>可调用对象f。其实<code>Tuple</code>不一定为<code>std::tuple</code>，可以是任何支持<code>std::get</code>和<code>std::tuple_size</code>的东西，比如<code>std::array</code>(C++11),<code>std::pair</code>(C++11)。
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//possible implementation</span></span><br><span class="line"><span class="keyword">namespace</span> detail &#123;</span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">class</span> <span class="title class_">F</span>, <span class="keyword">class</span> <span class="title class_">Tuple</span>, std::<span class="type">size_t</span>... I&gt;</span><br><span class="line"><span class="function"><span class="keyword">constexpr</span> <span class="keyword">decltype</span>(<span class="keyword">auto</span>) <span class="title">apply_impl</span><span class="params">(F&amp;&amp; f, Tuple&amp;&amp; t, std::index_sequence&lt;I...&gt;)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">// This implementation is valid since C++20 (via P1065R2)</span></span><br><span class="line">    <span class="comment">// In C++17, a constexpr counterpart of std::invoke is actually needed here</span></span><br><span class="line">    <span class="keyword">return</span> std::<span class="built_in">invoke</span>(std::forward&lt;F&gt;(f), std::<span class="built_in">get</span>&lt;I&gt;(std::forward&lt;Tuple&gt;(t))...);</span><br><span class="line">&#125;</span><br><span class="line">&#125;  <span class="comment">// namespace detail</span></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">class</span> <span class="title class_">F</span>, <span class="keyword">class</span> <span class="title class_">Tuple</span>&gt;</span><br><span class="line"><span class="function"><span class="keyword">constexpr</span> <span class="keyword">decltype</span>(<span class="keyword">auto</span>) <span class="title">apply</span><span class="params">(F&amp;&amp; f, Tuple&amp;&amp; t)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">return</span> detail::<span class="built_in">apply_impl</span>(</span><br><span class="line">        std::forward&lt;F&gt;(f), std::forward&lt;Tuple&gt;(t),</span><br><span class="line">        std::make_index_sequence&lt;std::tuple_size_v&lt;std::<span class="type">remove_reference_t</span>&lt;Tuple&gt;&gt;&gt;&#123;&#125;);</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">/* tuple traversal in C++17 */</span></span><br><span class="line">std::<span class="built_in">apply</span>([](<span class="keyword">auto</span>&amp;&amp;... item) &#123;</span><br><span class="line">    ((std::cout &lt;&lt; item &lt;&lt; <span class="string">&quot;, &quot;</span>), ...);</span><br><span class="line">    &#125;, t);</span><br></pre></td></tr></table></figure> ### decltype(auto) (C++14)
+<code>decltype(auto)</code>十分瞩目，用法<a
+target="_blank" rel="noopener" href="https://stackoverflow.com/questions/24109737/what-are-some-uses-of-decltypeauto">stackoverflow</a>总结的非常好。这里再简单列一下:
+- Return type forwarding in generic code 完美转发返回类型 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">class</span> Fun, <span class="keyword">class</span>... Args&gt;</span></span><br><span class="line"><span class="function"><span class="keyword">decltype</span>(<span class="keyword">auto</span>) <span class="title">Example</span><span class="params">(Fun fun, Args&amp;&amp;... args)</span> </span></span><br><span class="line"><span class="function"></span>&#123; </span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">fun</span>(std::forward&lt;Args&gt;(args)...); </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+- Delaying return type deduction in recursive templates
+在递归模板中延迟返回类型推断 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="type">int</span> i&gt; </span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">Int</span> &#123;&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">constexpr</span> <span class="keyword">auto</span> <span class="title">iter</span><span class="params">(Int&lt;<span class="number">0</span>&gt;)</span> -&gt; Int&lt;0&gt;</span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="type">int</span> i&gt;</span></span><br><span class="line"><span class="function"><span class="keyword">constexpr</span> <span class="keyword">auto</span> <span class="title">iter</span><span class="params">(Int&lt;i&gt;)</span> -&gt; <span class="keyword">decltype</span>(<span class="keyword">auto</span>) </span></span><br><span class="line"><span class="function"></span>&#123; <span class="keyword">return</span> <span class="built_in">iter</span>(Int&lt;i<span class="number">-1</span>&gt;&#123;&#125;); &#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123; <span class="keyword">decltype</span>(<span class="built_in">iter</span>(Int&lt;<span class="number">10</span>&gt;&#123;&#125;)) a; &#125;</span><br></pre></td></tr></table></figure></p>
+<p>一些例子 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> i;</span><br><span class="line"><span class="function"><span class="type">int</span>&amp;&amp; <span class="title">f</span><span class="params">()</span></span>;</span><br><span class="line"><span class="keyword">auto</span> x3a = i;                  <span class="comment">// decltype(x3a) is int</span></span><br><span class="line"><span class="keyword">decltype</span>(<span class="keyword">auto</span>) x3d = i;        <span class="comment">// decltype(x3d) is int</span></span><br><span class="line"><span class="keyword">auto</span> x4a = (i);                <span class="comment">// decltype(x4a) is int</span></span><br><span class="line"><span class="keyword">decltype</span>(<span class="keyword">auto</span>) x4d = (i);      <span class="comment">// decltype(x4d) is int&amp;</span></span><br><span class="line"><span class="keyword">auto</span> x5a = <span class="built_in">f</span>();                <span class="comment">// decltype(x5a) is int</span></span><br><span class="line"><span class="keyword">decltype</span>(<span class="keyword">auto</span>) x5d = <span class="built_in">f</span>();      <span class="comment">// decltype(x5d) is int&amp;&amp;</span></span><br><span class="line"><span class="keyword">auto</span> x6a = &#123; <span class="number">1</span>, <span class="number">2</span> &#125;;           <span class="comment">// decltype(x6a) is std::initializer_list&lt;int&gt;</span></span><br><span class="line"><span class="keyword">decltype</span>(<span class="keyword">auto</span>) x6d = &#123; <span class="number">1</span>, <span class="number">2</span> &#125;; <span class="comment">// error, &#123; 1, 2 &#125; is not an expression</span></span><br><span class="line"><span class="keyword">auto</span> *x7a = &amp;i;                <span class="comment">// decltype(x7a) is int*</span></span><br><span class="line"><span class="keyword">decltype</span>(<span class="keyword">auto</span>)*x7d = &amp;i;       <span class="comment">// error, declared type is not plain decltype(auto)</span></span><br></pre></td></tr></table></figure></p>
+<h3 id="stdinvoke-c17">std::invoke (C++17)</h3>
+<p>更广义上的可调用对象的调用，C++20加上了constexpr版本。 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//C++17 ~ C++20</span></span><br><span class="line"><span class="function"><span class="keyword">template</span>&lt; <span class="keyword">class</span> F, <span class="keyword">class</span>... Args&gt;</span></span><br><span class="line"><span class="function">std::<span class="type">invoke_result_t</span>&lt;F, Args...&gt;</span></span><br><span class="line"><span class="function"><span class="title">invoke</span><span class="params">(F&amp;&amp; f, Args&amp;&amp;... args)</span> <span class="title">noexcept</span><span class="params">( )</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">//C++20</span></span><br><span class="line"><span class="function"><span class="keyword">template</span>&lt; <span class="keyword">class</span> F, <span class="keyword">class</span>... Args&gt;</span></span><br><span class="line"><span class="function"><span class="keyword">constexpr</span> std::<span class="type">invoke_result_t</span>&lt;F, Args...&gt;</span></span><br><span class="line"><span class="function"><span class="title">invoke</span><span class="params">(F&amp;&amp; f, Args&amp;&amp;... args)</span> <span class="title">noexcept</span><span class="params">( )</span></span>;</span><br></pre></td></tr></table></figure>
+根据其中<code>F</code>，有<a
+target="_blank" rel="noopener" href="https://en.cppreference.com/w/cpp/utility/functional/invoke">几种调用的情况</a>
+<img src="/2021/05/25/Template-index-sequence-parameter-pack-fold-expression/stdinvoke.jpg" class="" title="std::invoke cases">
+<code>f</code>可以是<code>class T</code>的成员函数指针，成员变量指针(N
+== 1)。否则<code>f</code>为函数对象，等同于<code>f(t1,t2..)</code>。 ##
+Parameter Pack (C++11) ### Syntax
+模板参数包只能作为<strong>模板参数列表</strong>的最后一个参数 -
+<code>type... Args(optional)</code> 非类型模板参数包 -
+<code>typename|class... Args(optional)</code> 类型模板参数包 -
+<code>template &lt;parameter-list&gt; typename(C++17)|class ... Args(optional)</code>
+模板参数包的模板 - <code>Args... args(optional)</code>
+函数参数包，用于变长参数函数模板的形参声明 - <code>pattern...</code>
+函数包展开：展开为","分隔的pattern list</p>
+<h3 id="expansion">Expansion</h3>
+<h4 id="函数实参列表">函数实参列表</h4>
+<p>(注意4,
+5),展开可能会出现在函数调用运算符的括号内，在这种情况下，<strong>省略号左侧的最大表达式</strong>或<strong>括号初始列表</strong>是展开的pattern。
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">f</span>(&amp;args...); <span class="comment">// expands to f(&amp;E1, &amp;E2, &amp;E3)</span></span><br><span class="line"><span class="built_in">f</span>(n, ++args...); <span class="comment">// expands to f(n, ++E1, ++E2, ++E3);</span></span><br><span class="line"><span class="built_in">f</span>(++args..., n); <span class="comment">// expands to f(++E1, ++E2, ++E3, n);</span></span><br><span class="line"><span class="built_in">f</span>(<span class="built_in">const_cast</span>&lt;<span class="type">const</span> Args*&gt;(&amp;args)...);</span><br><span class="line"><span class="comment">// f(const_cast&lt;const E1*&gt;(&amp;X1), const_cast&lt;const E2*&gt;(&amp;X2), const_cast&lt;const E3*&gt;(&amp;X3))</span></span><br><span class="line"><span class="built_in">f</span>(<span class="built_in">h</span>(args...) + args...); <span class="comment">// expands to </span></span><br><span class="line"><span class="comment">// f(h(E1,E2,E3) + E1, h(E1,E2,E3) + E2, h(E1,E2,E3) + E3)</span></span><br></pre></td></tr></table></figure> #### 列表初始化 (注意sizeof...) <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span>... Ts&gt; <span class="type">void</span> <span class="title">func</span><span class="params">(Ts... args)</span></span>&#123;</span><br><span class="line">    <span class="type">const</span> <span class="type">int</span> size = <span class="keyword">sizeof</span>...(args) + <span class="number">2</span>;</span><br><span class="line">    <span class="type">int</span> res[size] = &#123;<span class="number">1</span>, args..., <span class="number">2</span>&#125;;</span><br><span class="line">    <span class="comment">// since initializer lists guarantee sequencing, this can be used to</span></span><br><span class="line">    <span class="comment">// call a function on each element of a pack, in order:</span></span><br><span class="line">    <span class="type">int</span> dummy[<span class="keyword">sizeof</span>...(Ts)] = &#123; (std::cout &lt;&lt; args, <span class="number">0</span>)... &#125;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure> ####
+函数形参列表
+如果括号在函数声明中出现，函数声明就是<code>pattern</code>。如果两个参数包在同一个<code>pattern</code>出现，则它们同时展开（非笛卡尔积），且参数列表必须长度相等。
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span>... Ts, <span class="type">int</span>... N&gt; </span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">g</span><span class="params">(Ts (&amp;...arr)[N])</span> </span>&#123;&#125;</span><br><span class="line"><span class="type">int</span> n[<span class="number">1</span>];</span><br><span class="line"><span class="built_in">g</span>&lt;<span class="type">const</span> <span class="type">char</span>, <span class="type">int</span>&gt;(<span class="string">&quot;a&quot;</span>, n); <span class="comment">// Ts (&amp;...arr)[N] expands to </span></span><br><span class="line">                            <span class="comment">// const char (&amp;)[2], int(&amp;)[1]</span></span><br></pre></td></tr></table></figure> <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span>...&gt; <span class="keyword">struct</span> <span class="title class_">Tuple</span> &#123;&#125;;</span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T1, <span class="keyword">typename</span> T2&gt; <span class="keyword">struct</span> <span class="title class_">Pair</span> &#123;&#125;;</span><br><span class="line"> </span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">class</span> ...Args1&gt; <span class="keyword">struct</span> <span class="title class_">zip</span> &#123;</span><br><span class="line">    <span class="keyword">template</span>&lt;<span class="keyword">class</span> ...Args2&gt; <span class="keyword">struct</span> <span class="title class_">with</span> &#123;</span><br><span class="line">        <span class="keyword">typedef</span> Tuple&lt;Pair&lt;Args1, Args2&gt;...&gt; type;</span><br><span class="line"><span class="comment">//        Pair&lt;Args1, Args2&gt;... is the pack expansion</span></span><br><span class="line"><span class="comment">//        Pair&lt;Args1, Args2&gt; is the pattern</span></span><br><span class="line">    &#125;;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="keyword">typedef</span> zip&lt;<span class="type">short</span>, <span class="type">int</span>&gt;::with&lt;<span class="type">unsigned</span> <span class="type">short</span>, <span class="type">unsigned</span>&gt;::type T1;</span><br><span class="line"><span class="comment">// Pair&lt;Args1, Args2&gt;... expands to</span></span><br><span class="line"><span class="comment">// Pair&lt;short, unsigned short&gt;, Pair&lt;int, unsigned int&gt; </span></span><br><span class="line"><span class="comment">// T1 is Tuple&lt;Pair&lt;short, unsigned short&gt;, Pair&lt;int, unsigned&gt;&gt;</span></span><br></pre></td></tr></table></figure> #### 模板形参列表 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">展开为非类型模板参数</span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span>... T&gt; <span class="keyword">struct</span> <span class="title class_">value_holder</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">template</span>&lt;T... Values&gt; <span class="comment">// expands to a non-type template parameter </span></span><br><span class="line">    <span class="keyword">struct</span> <span class="title class_">apply</span> &#123; &#125;;     <span class="comment">// list, such as &lt;int, char, int(&amp;)[5]&gt;</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure> ####
+基类列表 一般意味着构造函数也需要参数包，且有member initializer-list
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">class</span>... Mixins&gt;</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">X</span> : <span class="keyword">public</span> Mixins... &#123;</span><br><span class="line"> <span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">X</span>(<span class="type">const</span> Mixins&amp;... mixins) : <span class="built_in">Mixins</span>(mixins)... &#123; &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure> #### lambda捕获 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">class</span> ...Args&gt;</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">f</span><span class="params">(Args... args)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">auto</span> lm = [&amp;, args...] &#123; <span class="keyword">return</span> <span class="built_in">g</span>(args...); &#125;;</span><br><span class="line">    <span class="built_in">lm</span>();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure> #### Attribute list
+属性列表 属性列表也允许展开 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> [[attributes...]] <span class="built_in">function</span>()</span><br></pre></td></tr></table></figure> #### using <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span>... bases&gt;</span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">X</span> : bases... &#123;</span><br><span class="line">	<span class="keyword">using</span> bases::g...;</span><br><span class="line">&#125;;</span><br><span class="line">X&lt;B, D&gt; x; <span class="comment">// OK: B::g and D::g introduced</span></span><br></pre></td></tr></table></figure></p>
+<h3 id="fold-expression-c-17">Fold Expression (C++ 17)</h3>
+<h3 id="syntax">Syntax</h3>
+<ul>
+<li><code>pack op ...</code></li>
+<li><code>... op pack</code></li>
+<li><code>pack op ... op init</code></li>
+<li><code>init op ... op pack</code></li>
+</ul>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span>... Args&gt;</span></span><br><span class="line"><span class="function"><span class="type">bool</span> <span class="title">all</span><span class="params">(Args... args)</span> </span>&#123; <span class="keyword">return</span> (... &amp;&amp; args); &#125;</span><br><span class="line"> </span><br><span class="line"><span class="type">bool</span> b = <span class="built_in">all</span>(<span class="literal">true</span>, <span class="literal">true</span>, <span class="literal">true</span>, <span class="literal">false</span>);</span><br><span class="line"> <span class="comment">// within all(), the unary left fold expands as</span></span><br><span class="line"> <span class="comment">//  return ((true &amp;&amp; true) &amp;&amp; true) &amp;&amp; false;</span></span><br><span class="line"> <span class="comment">// b is false</span></span><br><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> ...Args&gt;</span></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">sum</span><span class="params">(Args&amp;&amp;... args)</span> </span>&#123;</span><br><span class="line"><span class="comment">//    return (args + ... + 1 * 2); // Error: operator with precedence below cast</span></span><br><span class="line">    <span class="keyword">return</span> (args + ... + (<span class="number">1</span> * <span class="number">2</span>)); <span class="comment">// OK</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="crtp-curiously-recurring-template-pattern">CRTP (Curiously
+Recurring Template Pattern)</h3>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// CRTP Curiously Recurring Template Pattern</span></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Child&gt;</span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">Base</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">interface</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="built_in">static_cast</span>&lt;Child*&gt;(<span class="keyword">this</span>)-&gt;<span class="built_in">implementation</span>();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">Derived</span> : <span class="keyword">public</span> Base&lt;Derived&gt;</span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">implementation</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        std::cout &lt;&lt; <span class="string">&quot;Derived : implementation&quot;</span>&lt;&lt; std::endl;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>在基类中定义接口，派生类中实现方法。派生类继承基类的派生类特化，子类回调派生类的实现。用于实现静态多态。</p>
+<h4 id="enable_shared_from_this-c11">enable_shared_from_this
+(C++11)</h4>
+<p>需要在类对象的内部中获得一个指向当前对象的<code>shared_ptr</code>对象。
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// std::enable_shared_from_this</span></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">Good</span>: std::enable_shared_from_this&lt;Good&gt;</span><br><span class="line">&#123;</span><br><span class="line">    <span class="function">std::shared_ptr&lt;Good&gt; <span class="title">getptr</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">shared_from_this</span>();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    std::shared_ptr&lt;Good&gt; gp1 = std::<span class="built_in">make_shared</span>&lt;Good&gt;();</span><br><span class="line">    std::shared_ptr&lt;Good&gt; gp2 = gp1-&gt;<span class="built_in">getptr</span>();</span><br><span class="line">    std::cout &lt;&lt; <span class="string">&quot;gp2.use_count() = &quot;</span> &lt;&lt; gp2.<span class="built_in">use_count</span>() &lt;&lt; <span class="string">&#x27;\n&#x27;</span>;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure> 基本实现 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">namespace</span> example</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">class</span> <span class="title class_">D</span>&gt;</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">enable_shared_from_this</span> &#123;</span><br><span class="line"><span class="keyword">protected</span>:</span><br><span class="line">    <span class="function"><span class="keyword">constexpr</span> <span class="title">enable_shared_from_this</span><span class="params">()</span> </span>&#123; &#125;</span><br><span class="line">    <span class="built_in">enable_shared_from_this</span>( enable_shared_from_this <span class="type">const</span>&amp;) &#123; &#125;</span><br><span class="line">    enable_shared_from_this&amp; <span class="keyword">operator</span>=(enable_shared_from_this <span class="type">const</span>&amp;) &#123;</span><br><span class="line">        <span class="keyword">return</span> *<span class="keyword">this</span>;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function">std::shared_ptr&lt;D&gt; <span class="title">shared_from_this</span><span class="params">()</span> </span>&#123;<span class="keyword">return</span> self_;&#125;</span><br><span class="line">    <span class="function">std::shared_ptr&lt;D <span class="type">const</span>&gt; <span class="title">shared_from_this</span><span class="params">()</span> <span class="type">const</span> </span>&#123; <span class="keyword">return</span> self_;&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    std::weak_ptr&lt;D&gt; self_;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">friend</span> std::shared_ptr&lt;D&gt;;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/template/" rel="tag"># template</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2021/04/17/mutex-criticalsection-semaphore/" rel="next" title="mutex, criticalsection, semaphore">
+                <i class="fa fa-chevron-left"></i> mutex, criticalsection, semaphore
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2021/06/02/Template-type-traits/" rel="prev" title="[Template] type_traits">
+                [Template] type_traits <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+      <div id="sidebar-dimmer"></div>
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/%7C%7C%20archive">
+              
+                  <span class="site-state-item-count">26</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">12</span>
+                  <span class="site-state-item-name">categories</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">16</span>
+                  <span class="site-state-item-name">tags</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#stdinvoke-c17"><span class="nav-number">1.</span> <span class="nav-text">std::invoke (C++17)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#expansion"><span class="nav-number">2.</span> <span class="nav-text">Expansion</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%87%BD%E6%95%B0%E5%AE%9E%E5%8F%82%E5%88%97%E8%A1%A8"><span class="nav-number">2.1.</span> <span class="nav-text">函数实参列表</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#fold-expression-c-17"><span class="nav-number">3.</span> <span class="nav-text">Fold Expression (C++ 17)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#syntax"><span class="nav-number">4.</span> <span class="nav-text">Syntax</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#crtp-curiously-recurring-template-pattern"><span class="nav-number">5.</span> <span class="nav-text">CRTP (Curiously
+Recurring Template Pattern)</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#enable_shared_from_this-c11"><span class="nav-number">5.1.</span> <span class="nav-text">enable_shared_from_this
+(C++11)</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Silven Huang</span>
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+
+
+  
+
+  
+
+</body>
+</html>

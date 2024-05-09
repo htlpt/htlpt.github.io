@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon32.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon16.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Image Rigistration," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="2010年的900多引用的文章：Point Set Registration: Coherent Point Drift 文章里把点集配准分成rigid和nonrigid两种。rigid变换是指只包括平移，旋转，缩放的变换；nonrigid变换范围更广，其中最典型的就是仿射变换(affine),现实场景中的复杂情况也包括在这一类里。文中针对这两种情况下更健壮的配准，改进现有的算法的问题(错误提">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Point Set Registration: Coherent Point Drift">
+<meta property="og:url" content="https://htplt.github.io/2019/09/11/Point-Set-Registration-Coherent-Point-Drift/index.html">
+<meta property="og:site_name" content="Output">
+<meta property="og:description" content="2010年的900多引用的文章：Point Set Registration: Coherent Point Drift 文章里把点集配准分成rigid和nonrigid两种。rigid变换是指只包括平移，旋转，缩放的变换；nonrigid变换范围更广，其中最典型的就是仿射变换(affine),现实场景中的复杂情况也包括在这一类里。文中针对这两种情况下更健壮的配准，改进现有的算法的问题(错误提">
+<meta property="og:locale">
+<meta property="og:image" content="https://htplt.github.io/2019/09/11/Point-Set-Registration-Coherent-Point-Drift/rigid.jpg">
+<meta property="og:image" content="https://htplt.github.io/2019/09/11/Point-Set-Registration-Coherent-Point-Drift/affine.jpg">
+<meta property="og:image" content="https://htplt.github.io/2019/09/11/Point-Set-Registration-Coherent-Point-Drift/nonrigid.jpg">
+<meta property="article:published_time" content="2019-09-11T06:56:23.000Z">
+<meta property="article:modified_time" content="2022-07-11T14:34:29.738Z">
+<meta property="article:author" content="Silven Huang">
+<meta property="article:tag" content="Image Rigistration">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://htplt.github.io/2019/09/11/Point-Set-Registration-Coherent-Point-Drift/rigid.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"hide","offset":12,"b2t":false,"scrollpercent":false,"onmobile":true},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://htplt.github.io/2019/09/11/Point-Set-Registration-Coherent-Point-Drift/"/>
+
+
+
+
+
+  <title>Point Set Registration: Coherent Point Drift | Output</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 7.2.0"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Output</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+            About
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+            Archives
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://htplt.github.io/2019/09/11/Point-Set-Registration-Coherent-Point-Drift/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Output">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Point Set Registration: Coherent Point Drift</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2019-09-11T14:56:23+08:00">
+                2019-09-11
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/algorithm/" itemprop="url" rel="index">
+                    <span itemprop="name">algorithm</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>2010年的900多引用的文章：Point Set Registration: Coherent Point
+Drift</p>
+<p>文章里把点集配准分成rigid和nonrigid两种。rigid变换是指只包括平移，旋转，缩放的变换；nonrigid变换范围更广，其中最典型的就是仿射变换(affine),现实场景中的复杂情况也包括在这一类里。文中针对这两种情况下更健壮的配准，改进现有的算法的问题(错误提取的outlier和噪声多，容易收敛在局部最小),提出一种Coherent
+Point Drift(CPD)算法。 <span id="more"></span>
+算法把点集匹配考虑成概率密度的估计问题。其中一组点作为高斯混合模型(GMM)的质心，另一组点作为数据。理想的情况下，给定的数据点的对应点由它在GMM中的后验概率的最大值得到。本文CPD的核心是GMM中的质心有一个coherent的约束来保留点集的拓扑结构。</p>
+<h2 id="gmm">GMM</h2>
+<p>假设有两组点<span class="math inline">\(X_{N\times
+D}=(x_1,...,x_N)^T\)</span>，<span class="math inline">\(Y_{M\times
+D}=(y_1,...,y_M)^T\)</span>。GMM模型的概率密度函数(X点集内出现x点的概率)如下：
+<span class="math display">\[{p(x)=\sum_{m=1}^{M+1}P(m)p(x|m)}\]</span>
+其中<span class="math inline">\({p(x|m)}\)</span>为:<span
+class="math inline">\({p(x|m)=\frac{1}{(2\pi\sigma^2)^{D/2}}exp^{-\frac{||x-y_m||^2}{2\sigma^2}}}\)</span>
+约定在<span class="math inline">\({p(x|m)}\)</span>中都使用相同的<span
+class="math inline">\(\sigma^2\)</span>，GMM中的每个成分的<span
+class="math inline">\({P(m)=\frac{1}{M}}\)</span>都相等。其中再加上一项平均分布<span
+class="math inline">\({p(x|M+1)=\frac{1}{N}}\)</span>来代表噪声的影响。那么上式就变为：
+<span
+class="math display">\[{p(x)=w\frac{1}{N}+(1-w)\sum_{m=1}^{M+1}\frac{1}{M}p(x|m)}\]</span>
+<span class="math inline">\(y_m\)</span>和<span
+class="math inline">\(x_n\)</span>的对应可能性表示为: <span
+class="math display">\[P(m|x_n)=\frac{P(m)p(x_n|m)}{p(x_n)}\]</span>
+使用最大似然来估计<span
+class="math inline">\(\theta\)</span>(Transformation变换的参数)和<span
+class="math inline">\(\sigma^2\)</span>，最大化<span
+class="math inline">\(L(\theta,\sigma^2)\)</span>: <span
+class="math display">\[{L(\theta,\sigma^2)=\prod_{i=1}^{N}p(x_i)=\prod_{i=1}^{N}\sum_{m=1}^{M+1}P(m)p(x_i|m)}\]</span>
+等同于求-log最小: <span
+class="math display">\[E(\theta,\sigma^2)=-\sum_{n=1}^{N}\log\sum_{m=1}^{M+1}P(m)p(x_n|m)\]</span>
+-log为凹函数，使用Jensen不等式求得<span
+class="math inline">\(E(\theta,\sigma^2)\)</span>上界，再去掉常数项后的<span
+class="math inline">\(Q(\theta,\sigma^2)\)</span>: <span
+class="math display">\[Q=-\sum_{n=1}^{N}\sum_{m=1}^{M+1}P^{old}(m|x_n)\log
+P(x_n,m)=-\sum_{n=1}^{N}\sum_{m=1}^{M+1}P^{old}(m|x_n)\log(P^{new}(m)p^{new}(x_n|m))\]</span>
+问题转化为最小化成本函数<span
+class="math inline">\(Q\)</span>。使用EM(Expectation
+Maximization)算法求得使上式最小的<span
+class="math inline">\(\theta\)</span>和<span
+class="math inline">\(\sigma^2\)</span>,在E步使用前一次的参数(首次需要初始化)算出后验概率，在M步最大化Q函数，估计新的<span
+class="math inline">\(\theta\)</span>和<span
+class="math inline">\(\sigma^2\)</span>。 - E步,根据数据点算出后验概率:
+<span
+class="math display">\[P^{old}(m|x_n)=\frac{exp^{-\frac{1}{2}||\frac{x_n-T(y_m,\theta^{old})}{\sigma^{old}}||^2}}{\sum_{k=1}^{M}exp^{-\frac{1}{2}||\frac{x_n-T(y_k,\theta^{old})}{\sigma^{old}}||^2}+c}\]</span>
+其中<span class="math inline">\(T(y,\theta)\)</span>表示对y使用以<span
+class="math inline">\(\theta\)</span>为参数的transformation后的结果,<span
+class="math inline">\(c=(2\pi\theta^2)^{D/2}\frac{w}{1-w}\frac{M}{N}\)</span>。
+- M步，最大化Q，估计新的<span
+class="math inline">\(\theta\)</span>和<span
+class="math inline">\(\sigma^2\)</span>： <span
+class="math display">\[Q(\theta,\sigma^2)=\frac{1}{2\sigma^2}\sum_{n=1}^{N}\sum_{m=1}^{M}P^{old}(m|x_n)||x_n-T(y_m,\theta)||^2+\frac{N_PD}{2}\log\sigma^2\]</span>
+其中<span
+class="math inline">\(N_P=\sum_{n=1}^{N}\sum_{m=1}^{M}P^{old}(m|x_n)\)</span>。估计新的<span
+class="math inline">\(\theta\)</span>和<span
+class="math inline">\(\sigma^2\)</span>对于不同种类配准有不同的要求。</p>
+<h2 id="rigid">Rigid</h2>
+<p>rigid配准的GMM质心定义为<span
+class="math inline">\(T(y_m;R,t,s)=sRy_m+t\)</span>，其中<span
+class="math inline">\(R_{D\times D}\)</span>表示旋转矩阵，<span
+class="math inline">\(t_{D\times 1}\)</span>表示平移向量，<span
+class="math inline">\(s\)</span>表示缩放系数。算法过程如图：</p>
+<img src="/2019/09/11/Point-Set-Registration-Coherent-Point-Drift/rigid.jpg" class="" title="Rigid point set registration algorithm">
+<p>由于<span class="math inline">\(R\)</span>有<span
+class="math inline">\(R^TR=I,det(R)=1\)</span>的约束，在最小化成本函数时较为复杂。其中使用推论将成本函数转化为<span
+class="math inline">\(tr(A^TR)\)</span>形式，将求解转化为奇异值分解，具体推导省略。</p>
+<h2 id="affine">Affine</h2>
+<p>affine配准时没有对旋转矩阵的约束，要方便一些，质心定义为<span
+class="math inline">\(T(y_m;R,t,s)=sBy_m+t\)</span>。其中<span
+class="math inline">\(B_{D\times
+D}\)</span>是一个affine矩阵。求最小值时直接取<span
+class="math inline">\(Q(B,t,\sigma^2)\)</span>关于<span
+class="math inline">\(t\)</span>的偏导数并等于0，解线性方程组即可。</p>
+<img src="/2019/09/11/Point-Set-Registration-Coherent-Point-Drift/affine.jpg" class="" title="Affine point set registration algorithm">
+<h2 id="non-rigid-cpd">Non-rigid CPD</h2>
+<p>文中的重点对象，Non-rigid配准中，质心定义为<span
+class="math inline">\(T(Y,v)=Y+v(Y)\)</span>,初始位置加上一个移位函数(速度场函数)。通过正则化项来确保函数的平滑。在<span
+class="math inline">\(Q\)</span>函数中再加上一项<span
+class="math inline">\(\frac{\lambda}{2}\phi(v)\)</span>，转化为关于函数<span
+class="math inline">\(v\)</span>和<span
+class="math inline">\(\sigma^2\)</span>的函数： <span
+class="math display">\[Q(v,\sigma^2)=\frac{1}{2\sigma^2}\sum_{n=1}^{N}\sum_{m=1}^{M}P^{old}(m|x_n)||x_n-(y_m+v(y_m))||^2+\frac{N_PD}{2}\log\sigma^2+\frac{\lambda}{2}\phi(v)\]</span>
+为了使用变分法来估计函数(最优解表示成核函数的线性组合)，需要将<span
+class="math inline">\(\phi(v)\)</span>转变为等价的另一种形式，使用的是<span
+class="math inline">\(v\)</span>在再生核希尔伯特空间(RKHS)的范数: <span
+class="math display">\[\phi(v)=||v||_{H^m}^2=\int_{R^D}\frac{|\widetilde
+v(s)|^2}{\widetilde G(s)}ds\]</span> 其中<span
+class="math inline">\(\widetilde
+G(s)\)</span>是高斯核函数的傅里叶变换，<span
+class="math inline">\(\widetilde v(s)\)</span>是<span
+class="math inline">\(v(s)\)</span>的傅里叶变换。使用格林函数法求<span
+class="math inline">\(Q(v,\sigma^2)\)</span>的欧拉—拉格朗日微分方程的数值解后，最佳移位函数表示为:
+<span
+class="math display">\[v(z)=\sum_{m=1}^{M}w_mG(z,y_m)+\psi(z)\]</span>
+上式中的<span
+class="math inline">\(\psi(z)\)</span>是零空间项，将所有<span
+class="math inline">\(y_m\)</span>作为矩阵带入上式，得到隐含最优解的等式是:
+<span class="math display">\[(G+\lambda
+\sigma^2d(PI)^{-1})W=d(PI)^{-1}PX-Y\]</span> 其中<span
+class="math inline">\(W_{M\times D}\)</span>是系数矩阵，<span
+class="math inline">\(G_{M\times M}\)</span>是核矩阵，其中的元素<span
+class="math inline">\(g_{ij}=G(y_i,y_j)=e^{\frac{1}{2}||\frac{y_i-y_j}{\beta}||^2}\)</span>，矩阵<span
+class="math inline">\(P_{M\times N}\)</span>的元素为后验概率<span
+class="math inline">\(p_{mn}=P^{old}(m|x_n)\)</span>。最终变换后的<span
+class="math inline">\(y_m\)</span>的位置表示为<span
+class="math inline">\(T=T(Y,W)=Y+GW\)</span>。算法的过程如下：</p>
+<img src="/2019/09/11/Point-Set-Registration-Coherent-Point-Drift/nonrigid.jpg" class="" title="The Coherent Point Drift algorithm for nonrigid point set registration">
+<p>CPD中的有三个自由参数<span class="math inline">\(w\)</span>,<span
+class="math inline">\(\lambda\)</span>,<span
+class="math inline">\(\beta\)</span>。<span
+class="math inline">\(w\)</span>表示噪声的权重，<span
+class="math inline">\(\lambda\)</span>和<span
+class="math inline">\(\beta\)</span>都反映平滑正则化的程度。</p>
+<h2 id="总结">总结</h2>
+<p>CPD在使用高斯混合模型来解决点匹配问题的基础上，加上了对变换函数<span
+class="math inline">\(v\)</span>的平滑(motion
+coherence/smoothness)约束。约束实现的方法是在总的代价函数中再加入一项正则化项。通常情况下加入正则化项就是为了防止过拟合或者施加某种约束的,来惩罚不希望得到的结果。</p>
+<p>在本篇CPD中：正则化项选择的是<span
+class="math inline">\(v\)</span>在再生核希尔伯特空间(RKHS)的范数，RKHS的核函数选择了高斯核函数。约束算法的本质是使用了核方法的优化问题【<strong>核方法</strong>：要求函数<span
+class="math inline">\(v\)</span>，选定核函数k，设定目标函数=(<strong>正则化项</strong>：该核函数k对应的RKHS的范数)+(<strong>损失函数</strong>：GMM中得到的极大似然估计的上界函数)，得到<span
+class="math inline">\(v\)</span>=使目标函数最小的核函数k的线性组合)】。算法里并没有显式地求出匹配后的<span
+class="math inline">\(T\)</span>函数，而是用核技巧绕过了<span
+class="math inline">\(T\)</span>函数的具体求解，而借助<span
+class="math inline">\(G\)</span>和<span
+class="math inline">\(W\)</span>（将<span
+class="math inline">\(T\)</span>表示为高斯核函数的线性组合），得到了需要的<span
+class="math inline">\(P\)</span>矩阵。</p>
+<p>在作者2007年的一篇Non-rigid point set registration:Coherent Point
+Drift文章(本文前身)里，正则化项<span
+class="math inline">\(\phi(v)\)</span>采取范数形式，直觉上是想计算速度场函数的高频能量来反映平滑性，因此积分内的式子中分母使用了高斯核函数(不仅正定，对称，并且也是一个低通滤波)，并且做了傅里叶变换。包含这样想法的正则化项，恰好也等同运动一致理论(Motion
+Coherent Theory)里的条件，因此这个算法也就有了CPD的名字。</p>
+<p>我一直想理解这个正则化项的意义，查阅了诸多博客和文章，发现除了作者自己的文章，很少有这个正则化项意义、如何实现"平滑约束"的解释，有引用的文章也基本上是在结论上做些修改，没有深入其中的原理。查的数学上的资料有偏微分方程，泛函，统计学习的一些内容。在长达一周的时间里，我所能得到的结论是这个正则化项也许可以从三方面解释：1.用机器学习中的核方法解释；2.从直觉上的速度场高频分量来解释；3.用运动一致理论MCT里的条件来解释。</p>
+<h2 id="参考资料">参考资料</h2>
+<p>https://blog.csdn.net/lilynothing/article/details/67631634
+https://blog.csdn.net/u010626937/article/details/75116000 [CPD]: Point
+Set Registration: Coherent Point Drift Non-rigid point set
+registration:Coherent Point Drift 《机器学习》周志华
+https://blog.csdn.net/xholes/article/details/84560795
+https://blog.csdn.net/a358463121/article/details/86358480
+https://www.cnblogs.com/bigmonkey/p/9519387.html</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Image-Rigistration/" rel="tag"># Image Rigistration</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/08/14/Viewing-matrices/" rel="next" title="Viewing matrices">
+                <i class="fa fa-chevron-left"></i> Viewing matrices
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/09/20/Euler-Lagrange%E6%96%B9%E7%A8%8B/" rel="prev" title="Euler-Lagrange方程">
+                Euler-Lagrange方程 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+      <div id="sidebar-dimmer"></div>
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/%7C%7C%20archive">
+              
+                  <span class="site-state-item-count">26</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">12</span>
+                  <span class="site-state-item-name">categories</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">16</span>
+                  <span class="site-state-item-name">tags</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#gmm"><span class="nav-number">1.</span> <span class="nav-text">GMM</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#rigid"><span class="nav-number">2.</span> <span class="nav-text">Rigid</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#affine"><span class="nav-number">3.</span> <span class="nav-text">Affine</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#non-rigid-cpd"><span class="nav-number">4.</span> <span class="nav-text">Non-rigid CPD</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">5.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="nav-number">6.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Silven Huang</span>
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

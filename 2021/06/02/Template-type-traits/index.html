@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon32.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon16.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="template," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="为了看懂各种STL源码必须具备的基本知识。频繁的利用特化和SFINAE，看这些源码就感觉就像在看GHC的实现(bottom-up, 模式匹配?)。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="[Template] type_traits">
+<meta property="og:url" content="https://htplt.github.io/2021/06/02/Template-type-traits/index.html">
+<meta property="og:site_name" content="Output">
+<meta property="og:description" content="为了看懂各种STL源码必须具备的基本知识。频繁的利用特化和SFINAE，看这些源码就感觉就像在看GHC的实现(bottom-up, 模式匹配?)。">
+<meta property="og:locale">
+<meta property="article:published_time" content="2021-06-02T02:39:12.000Z">
+<meta property="article:modified_time" content="2021-06-02T03:22:00.886Z">
+<meta property="article:author" content="Silven Huang">
+<meta property="article:tag" content="template">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"hide","offset":12,"b2t":false,"scrollpercent":false,"onmobile":true},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://htplt.github.io/2021/06/02/Template-type-traits/"/>
+
+
+
+
+
+  <title>[Template] type_traits | Output</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 7.2.0"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Output</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+            About
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+            Archives
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://htplt.github.io/2021/06/02/Template-type-traits/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Output">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">[Template] type_traits</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2021-06-02T10:39:12+08:00">
+                2021-06-02
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/" itemprop="url" rel="index">
+                    <span itemprop="name">C++</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>为了看懂各种STL源码必须具备的基本知识。频繁的利用特化和SFINAE，看这些源码就感觉就像在看GHC的实现(bottom-up,
+模式匹配?)。 <span id="more"></span> ### intergral_constant C++11
+<code>type_traits</code>的基础。包装某个类型的一个<code>static constant</code>。被仿函数调用和类型转换时返回这个值。
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">class</span> <span class="title class_">T</span>, T v&gt;</span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">integral_constant</span> &#123;</span><br><span class="line">    <span class="type">static</span> <span class="keyword">constexpr</span> T value = v;</span><br><span class="line">    <span class="keyword">using</span> value_type = T;</span><br><span class="line">    <span class="keyword">using</span> type       = integral_constant;</span><br><span class="line">    <span class="function"><span class="keyword">constexpr</span> <span class="keyword">operator</span>   <span class="title">value_type</span><span class="params">()</span> <span class="type">const</span> <span class="keyword">noexcept</span> </span>&#123; <span class="keyword">return</span> value; &#125;<span class="comment">// type conversion</span></span><br><span class="line">    <span class="function"><span class="keyword">constexpr</span> value_type <span class="title">operator</span><span class="params">()</span><span class="params">(<span class="comment">/*param-list*/</span>)</span> <span class="type">const</span> <span class="keyword">noexcept</span> </span>&#123; <span class="keyword">return</span> value; &#125;<span class="comment">// C++14 function-like</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">//bool helpers</span></span><br><span class="line"><span class="keyword">using</span> true_type  = integral_constant&lt;<span class="type">bool</span>, <span class="literal">true</span>&gt;;</span><br><span class="line"><span class="keyword">using</span> false_type = integral_constant&lt;<span class="type">bool</span>, <span class="literal">false</span>&gt;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="type">bool</span> B&gt;</span><br><span class="line"><span class="keyword">using</span> bool_constant = integral_constant&lt;<span class="type">bool</span>, B&gt;;</span><br></pre></td></tr></table></figure></p>
+<h3 id="enable_if-c11">enable_if C++11</h3>
+<p>SFINAE常用的检验类型的helper。如果<code>bool</code>为<code>true</code>，则有<code>typedef</code>，否则无法实例化，SFINAE跳过这个模板。<code>T</code>的默认类型为<code>void</code>。
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="type">bool</span> B, <span class="keyword">class</span> <span class="title class_">T</span> = <span class="type">void</span>&gt;</span><br><span class="line"><span class="keyword">struct</span> enable_if &#123;&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">class</span> <span class="title class_">T</span>&gt;</span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">enable_if</span>&lt;<span class="literal">true</span>, T&gt; &#123; <span class="keyword">typedef</span> T type;&#125;;</span><br></pre></td></tr></table></figure></p>
+<h3 id="conditional-c11">conditional C++11</h3>
+<p>编译期判断B，<code>true</code>则type为类型T，<code>false</code>为类型F。
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="type">bool</span> B, <span class="keyword">class</span> <span class="title class_">T</span>, <span class="keyword">class</span> <span class="title class_">F</span>&gt;</span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">conditional</span> &#123; <span class="keyword">typedef</span> T type;&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">class</span> <span class="title class_">T</span>, <span class="keyword">class</span> <span class="title class_">F</span>&gt;</span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">conditional</span>&lt;<span class="literal">false</span>, T, F&gt; &#123; <span class="keyword">typedef</span> F type;&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="type">bool</span> B, <span class="keyword">class</span> <span class="title class_">T</span>, <span class="keyword">class</span> <span class="title class_">F</span>&gt;</span><br><span class="line"><span class="keyword">using</span> <span class="type">conditional_t</span> = <span class="keyword">typename</span> conditional&lt;B, T, F&gt;::type; <span class="comment">//C++14</span></span><br></pre></td></tr></table></figure>
+用<code>conditional</code>可以衍生出析取<code>disjunction</code>和合取<code>conjunction</code></p>
+<h4 id="conjunction-c17">conjunction C++17 (&amp;&amp;)</h4>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">class</span> ...&gt; <span class="keyword">struct</span> <span class="title class_">conjunction</span> : std::true_type &#123;&#125;;</span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">class</span> <span class="title class_">B1</span>&gt; <span class="keyword">struct</span> <span class="title class_">conjunction</span>&lt;B1&gt;: B1 &#123;&#125;;</span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">class</span> <span class="title class_">B1</span>, <span class="keyword">class</span>... Bn&gt;</span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">conjunction</span>&lt;B1, Bn...&gt;</span><br><span class="line">    : std::<span class="type">conditional_t</span>&lt;<span class="built_in">bool</span>(B1::value), conjunction&lt;Bn...&gt;, B1&gt; &#123;&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">class</span>... B&gt;</span><br><span class="line"><span class="keyword">inline</span> <span class="keyword">constexpr</span> <span class="type">bool</span> conjunction_v = conjunction&lt;B...&gt;::value;</span><br><span class="line"></span><br><span class="line"><span class="comment">//example</span></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">class</span> <span class="title class_">T</span>, <span class="keyword">class</span> ...Ts&gt;</span><br><span class="line">std::<span class="type">enable_if_t</span>&lt;std::conjunction_v&lt;std::is_same&lt;T,Ts&gt;...&gt;&gt;</span><br><span class="line"><span class="built_in">func</span>(T, Ts...) &#123;</span><br><span class="line">    std::cout &lt;&lt; <span class="string">&quot;all type in pack are T\n&quot;</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="disjunction-c17">disjunction C++17 (||)</h4>
+<p>找到第一个<code>value = true</code>的类型 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">class</span>...&gt; <span class="keyword">struct</span> <span class="title class_">dicjunction</span> : std::false_type &#123;&#125;;</span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">class</span> <span class="title class_">B1</span>&gt; <span class="keyword">struct</span> <span class="title class_">disjunction</span>&lt;B1&gt; : B1&#123;&#125;;</span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">class</span> <span class="title class_">B1</span>, <span class="keyword">class</span>... Bn&gt;</span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">disjunction</span>&lt;B1, Bn...&gt;</span><br><span class="line">    : std::<span class="type">conditional_t</span>&lt;<span class="built_in">bool</span>(B1::value), B1, disjunction&lt;Bn...&gt;&gt; &#123;&#125;;</span><br></pre></td></tr></table></figure></p>
+<h3 id="is_xxx-remove_xxx-add_xxx-c11">is_xxx, remove_xxx, add_xxx
+C++11</h3>
+<h4 id="is_same">is_same</h4>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">class</span> <span class="title class_">T</span>, <span class="keyword">class</span> <span class="title class_">U</span>&gt; <span class="keyword">struct</span> <span class="title class_">is_same</span> : std::false_type &#123;&#125;;</span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">class</span> <span class="title class_">T</span>&gt; <span class="keyword">struct</span> <span class="title class_">is_same</span>&lt;T, T&gt; : std::true_type &#123;&#125;;</span><br></pre></td></tr></table></figure>
+<h4 id="is_convertible">is_convertible</h4>
+<p>注意decltype中的逗号表达式，使用了SFINAE来检验类型。 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">class</span> <span class="title class_">T</span>&gt; <span class="comment">// check returnable</span></span><br><span class="line"><span class="function"><span class="keyword">auto</span> <span class="title">test_returnable</span><span class="params">(<span class="type">int</span>)</span> -&gt; <span class="title">decltype</span><span class="params">(</span></span></span><br><span class="line"><span class="params"><span class="function">    <span class="type">void</span>(<span class="keyword">static_cast</span>&lt;T(*)()&gt;(<span class="literal">nullptr</span>)), true_type&#123;&#125;</span></span></span><br><span class="line"><span class="params"><span class="function">)</span></span>;  </span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">class</span>&gt;</span><br><span class="line"><span class="function"><span class="keyword">auto</span> <span class="title">test_returnable</span><span class="params">(...)</span> -&gt; false_type</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">class</span> <span class="title class_">From</span>, <span class="keyword">class</span> <span class="title class_">To</span>&gt;<span class="comment">// check implicitly convertible</span></span><br><span class="line"><span class="function"><span class="keyword">auto</span> <span class="title">test_implicitly_convertible</span><span class="params">(<span class="type">int</span>)</span> -&gt; <span class="title">decltype</span><span class="params">(</span></span></span><br><span class="line"><span class="params"><span class="function">    <span class="type">void</span>(std::declval&lt;<span class="type">void</span>(&amp;)(To)&gt;()(std::declval&lt;From&gt;())), true_type&#123;&#125; </span></span></span><br><span class="line"><span class="params"><span class="function">)</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">class</span>, <span class="keyword">class</span>&gt;</span></span><br><span class="line"><span class="function"><span class="keyword">auto</span> <span class="title">test_implicitly_convertible</span><span class="params">(...)</span> -&gt; false_type</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">class</span> <span class="title class_">From</span>, <span class="keyword">class</span> <span class="title class_">To</span>&gt;</span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">is_convertible</span> : std::integral_constant&lt;<span class="type">bool</span>,</span><br><span class="line">    (<span class="keyword">decltype</span>(<span class="built_in">test_returnable</span>&lt;To&gt;(<span class="number">0</span>))::value &amp;&amp;</span><br><span class="line">     <span class="keyword">decltype</span>(<span class="built_in">test_implicitly_convertible</span>&lt;From, To&gt;(<span class="number">0</span>))::value) ||</span><br><span class="line">     (std::is_void&lt;From&gt;::value &amp;&amp; std::is_void&lt;To&gt;::value)</span><br><span class="line">&gt; &#123;&#125;; </span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">class</span> <span class="title class_">From</span>, <span class="keyword">class</span> <span class="title class_">To</span>&gt;</span><br><span class="line"><span class="keyword">inline</span> <span class="keyword">constexpr</span> <span class="type">bool</span> is_convertible_v = is_convertible&lt;From, To&gt;::value; <span class="comment">//C++17</span></span><br></pre></td></tr></table></figure>
+#### remove_cv <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">class</span> <span class="title class_">T</span>&gt; <span class="keyword">struct</span> <span class="title class_">remove_cv</span> &#123; <span class="keyword">typedef</span> T type;&#125;;</span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">class</span> <span class="title class_">T</span>&gt; <span class="keyword">struct</span> <span class="title class_">remove_cv</span> &lt;<span class="type">const</span> T&gt;&#123; <span class="keyword">typedef</span> T type;&#125;;</span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">class</span> <span class="title class_">T</span>&gt; <span class="keyword">struct</span> <span class="title class_">remove_cv</span> &lt;<span class="keyword">volatile</span> T&gt; &#123; <span class="keyword">typedef</span> T type;&#125;;</span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">class</span> <span class="title class_">T</span>&gt; <span class="keyword">struct</span> <span class="title class_">remove_cv</span> &lt;<span class="type">const</span> <span class="keyword">volatile</span> T&gt;&#123; <span class="keyword">typedef</span> T type;&#125;;</span><br></pre></td></tr></table></figure> #### remove_reference <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">class</span> <span class="title class_">T</span>&gt; <span class="keyword">struct</span> <span class="title class_">remove_reference</span> &#123; <span class="keyword">typedef</span> T type;&#125;;</span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">class</span> <span class="title class_">T</span>&gt; <span class="keyword">struct</span> <span class="title class_">remove_reference</span> &lt;T&amp;&gt; &#123; <span class="keyword">typedef</span> T type;&#125;;</span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">class</span> <span class="title class_">T</span>&gt; <span class="keyword">struct</span> <span class="title class_">remove_reference</span> &lt;T&amp;&amp;&gt; &#123; <span class="keyword">typedef</span> T type;&#125;;</span><br></pre></td></tr></table></figure> ####
+remove_extent <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">class</span> <span class="title class_">T</span>&gt; <span class="keyword">struct</span> <span class="title class_">remove_extent</span> &#123; <span class="keyword">typedef</span> T type; &#125;;</span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">class</span> <span class="title class_">T</span>&gt; <span class="keyword">struct</span> <span class="title class_">remove_extent</span>&lt;T[]&gt; &#123; <span class="keyword">typedef</span> T type; &#125;;</span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">class</span> <span class="title class_">T</span>, std::<span class="type">size_t</span> N&gt; <span class="keyword">struct</span> <span class="title class_">remove_extent</span>&lt;T[N]&gt; &#123; <span class="keyword">typedef</span> T type; &#125;;</span><br></pre></td></tr></table></figure> #### add_pointer <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">class</span> <span class="title class_">T</span>&gt;</span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">type_identity</span> &#123; <span class="keyword">using</span> type = T;&#125;;</span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">class</span> <span class="title class_">T</span>&gt;</span><br><span class="line"><span class="function"><span class="keyword">auto</span> <span class="title">try_add_pointer</span><span class="params">(<span class="type">int</span>)</span> -&gt; type_identity&lt;<span class="keyword">typename</span> std::remove_reference&lt;T&gt;::type*&gt;</span>;</span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">class</span> <span class="title class_">T</span>&gt;</span><br><span class="line"><span class="function"><span class="keyword">auto</span> <span class="title">try_add_pointer</span><span class="params">(...)</span> -&gt; type_identity&lt;T&gt;</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">class</span> <span class="title class_">T</span>&gt;</span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">add_pointer</span> : <span class="keyword">decltype</span>(<span class="built_in">try_add_pointer</span>&lt;T&gt;(<span class="number">0</span>)) &#123;&#125;;</span><br></pre></td></tr></table></figure></p>
+<h3 id="decay-c11">decay C++11</h3>
+<p>对T应用lvalue-to-rvalue, array-to-pointer,
+function-to-pointer的隐式转换，并去除cv修饰 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">class</span> <span class="title class_">T</span>&gt;</span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">decay</span> &#123;</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="keyword">typedef</span> <span class="keyword">typename</span> std::remove_reference&lt;T&gt;::type U;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="keyword">typedef</span> <span class="keyword">typename</span> std::conditional&lt;</span><br><span class="line">        std::is_array&lt;U&gt;::value,</span><br><span class="line">        <span class="keyword">typename</span> std::remove_extent&lt;U&gt;::type*,</span><br><span class="line">        <span class="keyword">typename</span> std::conditional&lt;</span><br><span class="line">            std::is_function&lt;U&gt;::value,</span><br><span class="line">            <span class="keyword">typename</span> std::add_pointer&lt;U&gt;::type,</span><br><span class="line">            <span class="keyword">typename</span> std::remove_cv&lt;U&gt;::type</span><br><span class="line">        &gt;::type</span><br><span class="line">    &gt;::type type;    </span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/template/" rel="tag"># template</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2021/05/25/Template-index-sequence-parameter-pack-fold-expression/" rel="next" title="[Template] index_sequence, parameter pack, fold expression">
+                <i class="fa fa-chevron-left"></i> [Template] index_sequence, parameter pack, fold expression
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2021/08/14/Rendering-Pipelines/" rel="prev" title="Rendering Pipelines">
+                Rendering Pipelines <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+      <div id="sidebar-dimmer"></div>
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/%7C%7C%20archive">
+              
+                  <span class="site-state-item-count">26</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">12</span>
+                  <span class="site-state-item-name">categories</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">16</span>
+                  <span class="site-state-item-name">tags</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#enable_if-c11"><span class="nav-number">1.</span> <span class="nav-text">enable_if C++11</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#conditional-c11"><span class="nav-number">2.</span> <span class="nav-text">conditional C++11</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#conjunction-c17"><span class="nav-number">2.1.</span> <span class="nav-text">conjunction C++17 (&amp;&amp;)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#disjunction-c17"><span class="nav-number">2.2.</span> <span class="nav-text">disjunction C++17 (||)</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#is_xxx-remove_xxx-add_xxx-c11"><span class="nav-number">3.</span> <span class="nav-text">is_xxx, remove_xxx, add_xxx
+C++11</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#is_same"><span class="nav-number">3.1.</span> <span class="nav-text">is_same</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#is_convertible"><span class="nav-number">3.2.</span> <span class="nav-text">is_convertible</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#decay-c11"><span class="nav-number">4.</span> <span class="nav-text">decay C++11</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Silven Huang</span>
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+
+
+  
+
+  
+
+</body>
+</html>

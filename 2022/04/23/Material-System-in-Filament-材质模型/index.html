@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon32.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon16.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="CG," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="材质模型在数学上由BSDF描述，BSDF主要由BRDF(Reflectance)和BTDF(Transmittance)组成。仅为Filament的文档笔记">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Material System in Filament : 材质模型">
+<meta property="og:url" content="https://htplt.github.io/2022/04/23/Material-System-in-Filament-%E6%9D%90%E8%B4%A8%E6%A8%A1%E5%9E%8B/index.html">
+<meta property="og:site_name" content="Output">
+<meta property="og:description" content="材质模型在数学上由BSDF描述，BSDF主要由BRDF(Reflectance)和BTDF(Transmittance)组成。仅为Filament的文档笔记">
+<meta property="og:locale">
+<meta property="og:image" content="https://htplt.github.io/2022/04/23/Material-System-in-Filament-%E6%9D%90%E8%B4%A8%E6%A8%A1%E5%9E%8B/material_chart.jpg">
+<meta property="article:published_time" content="2022-04-22T17:54:23.000Z">
+<meta property="article:modified_time" content="2024-05-09T09:43:11.913Z">
+<meta property="article:author" content="Silven Huang">
+<meta property="article:tag" content="CG">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://htplt.github.io/2022/04/23/Material-System-in-Filament-%E6%9D%90%E8%B4%A8%E6%A8%A1%E5%9E%8B/material_chart.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"hide","offset":12,"b2t":false,"scrollpercent":false,"onmobile":true},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://htplt.github.io/2022/04/23/Material-System-in-Filament-材质模型/"/>
+
+
+
+
+
+  <title>Material System in Filament : 材质模型 | Output</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 7.2.0"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Output</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+            About
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+            Archives
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://htplt.github.io/2022/04/23/Material-System-in-Filament-%E6%9D%90%E8%B4%A8%E6%A8%A1%E5%9E%8B/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Output">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Material System in Filament : 材质模型</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2022-04-23T01:54:23+08:00">
+                2022-04-23
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/material/" itemprop="url" rel="index">
+                    <span itemprop="name">material</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>材质模型在数学上由BSDF描述，BSDF主要由BRDF(Reflectance)和BTDF(Transmittance)组成。仅为Filament的文档笔记
+<span id="more"></span></p>
+<h2 id="standard-model">Standard model</h2>
+<p>在Filament标准模型中BTDF被省略或者近似，所以这里BRDF只能模仿reflective(镜面)，isotropic(各向同性)，dielectric(电介质)，conductive(导体)的表面。BRDF主要由两项构成，漫反射部分<span
+class="math inline">\(f_d\)</span>和镜面反射部分<span
+class="math inline">\(f_r\)</span>。使用微表面模型建模 <span
+class="math display">\[f_x(v,l)=\frac{1}{|n\cdot v||n\cdot
+l|}\int_{\Omega}D(m,\alpha)G(v,l,m)f_m(v,l,m)(v\cdot m)(l\cdot
+m)dm\]</span> - <span
+class="math inline">\(D\)</span>是法向量分布函数(NDF)，对表面的粗糙度起主要作用，由粗糙度参数<span
+class="math inline">\(\alpha\)</span>决定，主要有GGX，Beckmann，Blinn等，这里注意一下NDF的定义
+<span class="math display">\[\int_{\Omega^+} D(\omega)(\omega\cdot
+n)dw=1\]</span> - <span
+class="math inline">\(G\)</span>是几何项，主要考虑visibility (or
+occlusion or shadow-masking) - <span
+class="math inline">\(f_m\)</span>是微表面BRDF，是<span
+class="math inline">\(f_d\)</span>和<span
+class="math inline">\(f_r\)</span>的主要区别，下文详述</p>
+<p>dielectric(电介质)，conductive(导体)的表面主要由次表面反射区分(因为纯金属材质不会有次表面反射)，这意味着conductive(导体)的材质没有漫反射项。</p>
+<h3 id="specular-brdf-cook-torrance-approximation">Specular BRDF :
+Cook-Torrance Approximation</h3>
+<p>对于镜面反射部分，<span
+class="math inline">\(f_m\)</span>是可以用Fresnel
+law建模的镜面BRDF，Cook-Torrance把微表面模型积分近似为 <span
+class="math display">\[f_r(v,l)=\frac{D(h,\alpha)G(v,l,\alpha)F(v,h,f_0)}{4(n\cdot
+v)(n\cdot l)}\]</span></p>
+<ol type="1">
+<li><p><strong>NDF : GGX (Trowbridge-Reitz distribution)</strong> <span
+class="math display">\[D_{GGX}(h,\alpha)=\frac{\alpha^2}{\pi((n\cdot
+h)^2(\alpha^2-1)+1)^2}\]</span> <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">float</span> <span class="title function_">D_GGX</span><span class="params">(<span class="type">float</span> NoH, <span class="type">float</span> roughness)</span> &#123;</span><br><span class="line">    <span class="type">float</span> a = NoH * roughness;</span><br><span class="line">    <span class="type">float</span> k = roughness / (<span class="number">1.0</span> - NoH * NoH + a * a);</span><br><span class="line">    <span class="keyword">return</span> k * k * (<span class="number">1.0</span> / PI);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p></li>
+<li><p><strong>Geometric shadowing : Smith-GGX</strong> <span
+class="math display">\[G(v,l,\alpha)=G_1(l,\alpha)G_1(v,\alpha)\]</span>
+<span class="math inline">\(G_1\)</span>一般使用GGX <span
+class="math display">\[G_1(v,\alpha)=G_{GGX}(v,\alpha)=\frac{2(n\cdot
+v)}{n\cdot v+\sqrt{\alpha^2+(1-\alpha^2)(n\cdot v)^2}}\]</span>
+重新定义<span class="math inline">\(fr\)</span> <span
+class="math display">\[f_r(v,l)=D(h,\alpha)V(v,l,\alpha)F(v,h,f_0)\]</span>
+<span class="math display">\[V(v,l,\alpha)=\frac{G(v,l,\alpha)}{4(n\cdot
+v)(n\cdot l)}\]</span> 使用<a
+target="_blank" rel="noopener" href="https://google.github.io/filament/Filament.html#listing_specularv">Height-correlated
+Smith function</a>后 <span
+class="math display">\[V(v,l,\alpha)=\frac{0.5}{n\cdot l(n\cdot
+v(1-\alpha)+\alpha)+n\cdot v(n\cdot l(1-\alpha)+\alpha)}\]</span>
+还有[<a
+target="_blank" rel="noopener" href="https://google.github.io/filament/Filament.html#listing_approximatedspecularv">Hammon17</a>]的去掉根号的lerp版本
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">float</span> <span class="title function_">V_SmithGGXCorrelated</span><span class="params">(<span class="type">float</span> NoV, <span class="type">float</span> NoL, <span class="type">float</span> roughness)</span> &#123;</span><br><span class="line">    <span class="type">float</span> a2 = roughness * roughness;</span><br><span class="line">    <span class="type">float</span> GGXV = NoL * <span class="built_in">sqrt</span>(NoV * NoV * (<span class="number">1.0</span> - a2) + a2);</span><br><span class="line">    <span class="type">float</span> GGXL = NoV * <span class="built_in">sqrt</span>(NoL * NoL * (<span class="number">1.0</span> - a2) + a2);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0.5</span> / (GGXV + GGXL);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p></li>
+<li><p><strong>Fresnel : Schlick approximation</strong> <span
+class="math display">\[F_{Schlick}(v,h,f_0,f_{90})=f_0+(f_{90}-f_0)(1-v\cdot
+h)^5\]</span> 常数<span
+class="math inline">\(f_0\)</span>表示法向入射时的镜面反射率，常数<span
+class="math inline">\(f_{90}\)</span>表示掠射角的镜面反射率。<span
+class="math inline">\(f_{90}\)</span>一般为1</p>
+<p><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">vec3 <span class="title function_">F_Schlick</span><span class="params">(<span class="type">float</span> u, vec3 f0, <span class="type">float</span> f90)</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> f0 + (vec3(f90) - f0) * <span class="built_in">pow</span>(<span class="number">1.0</span> - u, <span class="number">5.0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure> ### Diffuse BRDF 对于漫反射部分，<span
+class="math inline">\(f_m\)</span>是Lambertian函数 #### Lambertian
+假设在微平面半球上具有均匀的漫反射响应，积分则化简为 <span
+class="math display">\[f_d(v,l)=\frac{\sigma}{\pi}\]</span> #### Disney
+然而，理想情况下，漫反射部分应与镜面反射项保持一致，并考虑到表面粗糙度，Disney的[<a
+target="_blank" rel="noopener" href="https://google.github.io/filament/Filament.html#listing_diffusebrdf">Burley12</a>]<span
+class="math inline">\(f_d\)</span>如下 <span
+class="math display">\[f_d(v,l)=\frac{\sigma}{\pi}F_{Schlick}(n,l,1,f_{90})F_{Schlick}(n,v,1,f_{90})\]</span>
+<span
+class="math display">\[f_{90}=0.5+2\cdot\alpha\cos^2(\theta_d),cos(\theta_d)=l\cdot
+h\]</span></p></li>
+</ol>
+<h3 id="energy-loss">Energy Loss</h3>
+<p>Cook-Torrance
+BRDF只建模了光的单次散射，显然这回造成roughness较高的情况下能量损失（单次散射ss被遮挡，多次散射ms后依然能够出射）。[<a
+target="_blank" rel="noopener" href="https://google.github.io/filament/Filament.html#citation-kulla17">Kulla17</a>]提出加入一个BRDF
+lobe作为补偿项<span class="math inline">\(f_{ms}\)</span>。 <span
+class="math display">\[
+f_{r}(l,v) = f_{ss}(l,v) + f_{ms}(l,v)
+\]</span></p>
+<h4 id="kulla-conty">Kulla-Conty</h4>
+<p>[<a
+target="_blank" rel="noopener" href="https://fpsunflower.github.io/ckulla/data/s2017_pbs_imageworks_slides_v2.pdf">Kulla17</a>]提出的补偿项，其中包含了补偿directional
+albedo归一化和Fresnel 多次散射能量消耗。 <span class="math display">\[
+f_{ms}(l,v) = \frac{(1 - E(l)) (1 - E(v)) F_{avg}^2 E_{avg}}{\pi (1 -
+E_{avg}) (1 - F_{avg}(1 - E_{avg}))}
+\]</span></p>
+<p><span class="math inline">\(E\)</span>是specular BRDF (<span
+class="math inline">\(f_0=1\)</span>)的directional albedo。<span
+class="math inline">\(E_{avg}\)</span>是<span
+class="math inline">\(E\)</span>的cosine-weighted average <span
+class="math display">\[
+E(l) = \int_{\Omega} f(l,v) (n\cdot v) dv\\
+E_{avg} = 2 \int_0^1 E(\mu) \mu d\mu
+\]</span> 其中<span class="math inline">\(E(l)\)</span>依赖于<span
+class="math inline">\(l,\alpha\)</span>。<span
+class="math inline">\(E_{avg}\)</span>依赖于<span
+class="math inline">\(\alpha\)</span>。都可以使用预计算查表。</p>
+<p><span
+class="math inline">\(F_{avg}\)</span>是Fresnel的cosine-weighted
+average，可以用Schlick approximation $$ F_{avg} = 2 _0^1 F() d</p>
+<p>$$</p>
+<h4 id="lagarde">Lagarde</h4>
+<p>[<a
+target="_blank" rel="noopener" href="https://google.github.io/filament/Filament.html#citation-lagarde18">Lagarde18</a>]将Fresnel简化为<span
+class="math inline">\(f_0\)</span>，并且把补偿项写作scaled GGX specluar
+lobe</p>
+<p><span class="math display">\[
+f_{ms}(l,v) = f_0 \frac{1 - E(l)}{E(l)} f_{ss}(l,v)
+\]</span></p>
+<p>因此整体表达式为 <span class="math display">\[
+f_r(l,v) = f_{ss}(l,v) + f_0 \left( \frac{1}{r} - 1 \right)
+f_{ss}(l,v)\\
+r = \int_{\Omega} D(l,v) V(l,v) \left&lt; n\cdot l \right&gt; dl
+\]</span> 这样只需要存储r就可以 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">vec3 energyCompensation = <span class="number">1.0</span> + f0 * (<span class="number">1.0</span> / dfg.y - <span class="number">1.0</span>);</span><br><span class="line"><span class="comment">// Scale the specular lobe to account for multiscattering</span></span><br><span class="line">Fr *= pixel.energyCompensation;</span><br></pre></td></tr></table></figure> ### Summary
+标准模型的代码如下 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">float</span> <span class="title function_">D_GGX</span><span class="params">(<span class="type">float</span> NoH, <span class="type">float</span> a)</span> &#123;</span><br><span class="line">    <span class="type">float</span> a2 = a * a;</span><br><span class="line">    <span class="type">float</span> f = (NoH * a2 - NoH) * NoH + <span class="number">1.0</span>;</span><br><span class="line">    <span class="keyword">return</span> a2 / (PI * f * f);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">vec3 <span class="title function_">F_Schlick</span><span class="params">(<span class="type">float</span> u, vec3 f0)</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> f0 + (vec3(<span class="number">1.0</span>) - f0) * <span class="built_in">pow</span>(<span class="number">1.0</span> - u, <span class="number">5.0</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">float</span> <span class="title function_">V_SmithGGXCorrelated</span><span class="params">(<span class="type">float</span> NoV, <span class="type">float</span> NoL, <span class="type">float</span> a)</span> &#123;</span><br><span class="line">    <span class="type">float</span> a2 = a * a;</span><br><span class="line">    <span class="type">float</span> GGXL = NoV * <span class="built_in">sqrt</span>((-NoL * a2 + NoL) * NoL + a2);</span><br><span class="line">    <span class="type">float</span> GGXV = NoL * <span class="built_in">sqrt</span>((-NoV * a2 + NoV) * NoV + a2);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0.5</span> / (GGXV + GGXL);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">float</span> <span class="title function_">Fd_Lambert</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">1.0</span> / PI;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">BRDF</span><span class="params">(...)</span> &#123;</span><br><span class="line">    vec3 h = normalize(v + l);</span><br><span class="line"></span><br><span class="line">    <span class="type">float</span> NoV = <span class="built_in">abs</span>(dot(n, v)) + <span class="number">1e-5</span>;</span><br><span class="line">    <span class="type">float</span> NoL = clamp(dot(n, l), <span class="number">0.0</span>, <span class="number">1.0</span>);</span><br><span class="line">    <span class="type">float</span> NoH = clamp(dot(n, h), <span class="number">0.0</span>, <span class="number">1.0</span>);</span><br><span class="line">    <span class="type">float</span> LoH = clamp(dot(l, h), <span class="number">0.0</span>, <span class="number">1.0</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// perceptually linear roughness to roughness (see parameterization)</span></span><br><span class="line">    <span class="type">float</span> roughness = perceptualRoughness * perceptualRoughness;</span><br><span class="line"></span><br><span class="line">    <span class="type">float</span> D = D_GGX(NoH, a);</span><br><span class="line">    vec3  F = F_Schlick(LoH, f0);</span><br><span class="line">    <span class="type">float</span> V = V_SmithGGXCorrelated(NoV, NoL, roughness);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// specular BRDF</span></span><br><span class="line">    vec3 Fr = (D * V) * F;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// diffuse BRDF</span></span><br><span class="line">    vec3 Fd = diffuseColor * Fd_Lambert();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// apply lighting...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure> ## Parameterization 直接使用Disney
+principled的参数对于实时渲染来说比较复杂和冗余。Filament的标准参数和范围如下</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Parameter</th>
+<th>Definition</th>
+<th>Type and range</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>BaseColor</strong></td>
+<td><strong>Diffuse albedo</strong> for non-metallic surfaces, and
+<strong>specular color</strong> for metallic surfaces</td>
+<td>Linear RGB [0..1]</td>
+</tr>
+<tr class="even">
+<td><strong>Metallic</strong></td>
+<td>Whether a surface appears to be dielectric (0.0) or conductor (1.0).
+Often used as a <strong>binary value</strong> (0 or 1)</td>
+<td>Scalar [0..1]</td>
+</tr>
+<tr class="odd">
+<td><strong>Roughness</strong></td>
+<td>Perceived smoothness (0.0) or roughness (1.0) of a surface. Smooth
+surfaces exhibit sharp reflections</td>
+<td>Scalar [0..1]</td>
+</tr>
+<tr class="even">
+<td><strong>Reflectance</strong></td>
+<td>Fresnel reflectance at normal incidence for dielectric surfaces.
+This replaces an explicit index of refraction</td>
+<td>Scalar [0..1]</td>
+</tr>
+<tr class="odd">
+<td><strong>Emissive</strong></td>
+<td>Additional diffuse albedo to simulate emissive surfaces (such as
+neons, etc.) This parameter is mostly useful in an HDR pipeline with a
+bloom pass</td>
+<td>Linear RGB [0..1] + exposure compensation</td>
+</tr>
+<tr class="even">
+<td><strong>Ambient occlusion</strong></td>
+<td>Defines how much of the ambient light is accessible to a surface
+point. It is a per-pixel shadowing factor between 0.0 and 1.0. This
+parameter will be discussed in more details in the lighting section</td>
+<td>Scalar [0..1]</td>
+</tr>
+</tbody>
+</table>
+<h3 id="remapping">remapping</h3>
+<p>为了让参数对艺术家们而言更直观，需要将<strong>baseColor</strong>,<strong>roughness</strong>,<strong>reflectance</strong>进行重映射</p>
+<ul>
+<li><strong>Base Color</strong></li>
+</ul>
+<p><span class="math display">\[diffuseColor = (1.0 - \textbf{metallic})
+* \textbf{baseColor}\]</span></p>
+<p><strong>baseColor</strong>受<strong>metallic</strong>影响。Dielectrics的镜面反射无色差，并保持以<strong>baseColor</strong>作为diffuse。Conductors使用<strong>baseColor</strong>作为镜面反射颜色，没有diffuse项</p>
+<ul>
+<li><p><strong>Reflectance</strong></p>
+<ul>
+<li><p><strong>Dielectrics</strong> Fresnel依赖于<span
+class="math inline">\(f_0\)</span>，即法向入射角的镜面反射率，对于Dielectrics来说是消色差的。
+<span class="math display">\[f_0=0.16*\textbf{reflectance}\]</span> <a
+target="_blank" rel="noopener" href="https://google.github.io/filament/Filament.html#figure_reflectance">目标</a>是将<span
+class="math inline">\(f_0\)</span>映射到可以表示常见电介质表面（4%
+反射率）和宝石（8% 到 16%）的Fresnel值的范围内。</p>
+<p>如果折射率(index of refraction,IOR)已知,<span
+class="math inline">\(f_0\)</span>可以推导 <span
+class="math display">\[f_0(n_{IOR})=\frac{(n_{IOR}-1)^2}{(n_{IOR}+1)^2}\]</span>
+<a
+target="_blank" rel="noopener" href="https://google.github.io/filament/Filament.html#table_commonmatreflectance">常见材质的Fresnel
+reflectance</a></p></li>
+<li><p><strong>Conductors</strong></p>
+<p>导体的镜面反射有色差 <span
+class="math display">\[f_0=\textbf{baseColor}\cdot\textbf{metallic}\]</span>
+<a
+target="_blank" rel="noopener" href="https://google.github.io/filament/Filament.html#table_fnormalmetals">常见金属材质的<span
+class="math inline">\(f_0\)</span></a> 完整的<span
+class="math inline">\(f_0\)</span>计算，用<strong>metallic</strong>进行"lerp"</p></li>
+</ul>
+<p><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">vec3 f0 = <span class="number">0.16</span> * reflectance * reflectance * (<span class="number">1.0</span> - metallic) </span><br><span class="line">      + baseColor * metallic;</span><br></pre></td></tr></table></figure></p></li>
+<li><p><strong>Roughness</strong></p>
+<p>为了让<strong>Roughness</strong>在视觉上符合linear的直觉 <span
+class="math display">\[\alpha=\textbf{roughness}^2\]</span></p></li>
+</ul>
+<h3 id="crafting-filament-pbm">Crafting Filament PBM</h3>
+<p>可以参照图表对于各个参数的设置</p>
+<img src="/2022/04/23/Material-System-in-Filament-%E6%9D%90%E8%B4%A8%E6%A8%A1%E5%9E%8B/material_chart.jpg" class="" title="Physically-based Materials">
+<h3 id="clear-coat-model">Clear coat model</h3>
+<p>标准的材质模型师只建模了单层的各向同性表面，多层材质模型也很常见。Filament为了方便参数化，
+清漆层永远是isotropic and dieletric(各向同性的电介质)</p>
+<p>标准材质模型可以通过增加一个specular
+lobe的方式扩展到清漆材质模型。清漆层改变了DVF中的V(<a
+target="_blank" rel="noopener" href="https://google.github.io/filament/Filament.html#listing_kelemen">Kelemen
+visibility function</a>) <span
+class="math display">\[V(l,h)=\frac{1}{4(l\cdot h)^2}\]</span>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">float</span> <span class="title function_">V_Kelemen</span><span class="params">(<span class="type">float</span> LoH)</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0.25</span> / (LoH * LoH);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure> 对于清漆层中的Fresnel
+term，假设清漆为聚氨酯（PU），使用对应的IOR=1.5推导出<span
+class="math inline">\(f_0=0.04\)</span>。最终的清漆模型BRDF为 <span
+class="math display">\[f(v,l)=(f_d(v,l)+f_r(v,l))(1-F_c)+f_c(v,l)\]</span></p>
+<p>其中<span
+class="math inline">\(F_c\)</span>是清漆BRDF中的Fresnel，<span
+class="math inline">\(f_c\)</span>是清漆BRDF</p>
+<p>清漆层的参数如下</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Parameter</th>
+<th>Definition</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>ClearCoat</strong></td>
+<td>Strength of the clear coat layer. Scalar [0...1]</td>
+</tr>
+<tr class="even">
+<td><strong>ClearCoatRoughness</strong></td>
+<td>Perceived smoothness or roughness of the clear coat layer. Scalar
+[0...1]</td>
+</tr>
+</tbody>
+</table>
+<p>清漆模型的伪代码 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">BRDF</span><span class="params">(...)</span> &#123;</span><br><span class="line">    <span class="comment">// compute Fd and Fr from standard model</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// remapping and linearization of clear coat roughness</span></span><br><span class="line">    clearCoatPerceptualRoughness = clamp(clearCoatPerceptualRoughness, <span class="number">0.089</span>, <span class="number">1.0</span>);</span><br><span class="line">    clearCoatRoughness = clearCoatPerceptualRoughness * clearCoatPerceptualRoughness;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// clear coat BRDF</span></span><br><span class="line">    <span class="type">float</span>  Dc = D_GGX(clearCoatRoughness, NoH);</span><br><span class="line">    <span class="type">float</span>  Vc = V_Kelemen(clearCoatRoughness, LoH);</span><br><span class="line">    <span class="type">float</span>  Fc = F_Schlick(<span class="number">0.04</span>, LoH) * clearCoat; <span class="comment">// clear coat strength</span></span><br><span class="line">    <span class="type">float</span> Frc = (Dc * Vc) * Fc;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// account for energy loss in the base layer</span></span><br><span class="line">    <span class="comment">// energyCompensation is Lagarde&#x27;s IBL-based (can be Kulla-Conty)</span></span><br><span class="line">    <span class="comment">// Scale the specular lobe to account for multiscattering</span></span><br><span class="line">    <span class="keyword">return</span> color * ((Fd + Fr * energyCompensation) * (<span class="number">1.0</span> - Fc) + Frc);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure> 显然对于清漆模型基层中的<span
+class="math inline">\(f_0\)</span>需要做一些修改，因为<span
+class="math inline">\(f_0\)</span>的IOR是对空气的，现在要对于聚氨酯(IOR=1.5)
+<span
+class="math display">\[f_{0}&#39;=\frac{(1-5\sqrt{f_0})^2}{(5-\sqrt{f_0})^2}\]</span>
+## Anisotropic model Disney使用了各向异性的GGX
+NDF来把标准模型扩展到各向异性 <span
+class="math display">\[D(h,\alpha)=\frac{1}{\pi\alpha_t\alpha_b}\frac{1}{((\frac{t\cdot
+h}{\alpha_t})^2+(\frac{b\cdot h}{\alpha_b})^2+(n\cdot h)^2)^2}\]</span>
+<span class="math inline">\(\alpha_t\)</span>为切向量<span
+class="math inline">\(t\)</span>方向的roughness，<span
+class="math inline">\(\alpha_b\)</span>为副切向量<span
+class="math inline">\(b\)</span>方向的roughness。</p>
+<table>
+<thead>
+<tr class="header">
+<th>Parameter</th>
+<th>Definition</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Anisotropy</strong></td>
+<td>Amount of anisotropy. Scalar[−1...1]</td>
+</tr>
+</tbody>
+</table>
+<p>各向异性一般由<strong>anistropy</strong>参数控制，Filament采用[<a
+target="_blank" rel="noopener" href="https://google.github.io/filament/Filament.html#citation-kulla17">Kulla17</a>]的方法参数化：
+<span class="math display">\[  
+\alpha_t = \alpha \times (1 + \textbf{anisotropy}) \\
+\alpha_b = \alpha \times (1 - \textbf{anisotropy})
+\]</span> <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">float</span> at = max(roughness * (<span class="number">1.0</span> + anisotropy), <span class="number">0.001</span>);</span><br><span class="line"><span class="type">float</span> ab = max(roughness * (<span class="number">1.0</span> - anisotropy), <span class="number">0.001</span>);</span><br><span class="line"></span><br><span class="line"><span class="type">float</span> <span class="title function_">V_SmithGGXCorrelated_Anisotropic</span><span class="params">(<span class="type">float</span> at, <span class="type">float</span> ab, <span class="type">float</span> ToV, <span class="type">float</span> BoV,</span></span><br><span class="line"><span class="params">        <span class="type">float</span> ToL, <span class="type">float</span> BoL, <span class="type">float</span> NoV, <span class="type">float</span> NoL)</span> &#123;</span><br><span class="line">    <span class="type">float</span> lambdaV = NoL * length(vec3(at * ToV, ab * BoV, NoV));</span><br><span class="line">    <span class="type">float</span> lambdaL = NoV * length(vec3(at * ToL, ab * BoL, NoL));</span><br><span class="line">    <span class="type">float</span> v = <span class="number">0.5</span> / (lambdaV + lambdaL);</span><br><span class="line">    <span class="keyword">return</span> saturateMediump(v);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure> [<a
+target="_blank" rel="noopener" href="https://google.github.io/filament/Filament.html#citation-heitz14">Heitz14</a>]提出了与height-correlated
+GGX相适配的<span class="math inline">\(G\)</span> <span
+class="math display">\[
+\begin{equation}
+V_{aniso}(n\cdot l,n\cdot v,\alpha) = \frac{1}{2((n\cdot
+l)\hat{\Lambda}_v+(n\cdot v)\hat{\Lambda}_l)} \\
+\hat{\Lambda}_v = \sqrt{\alpha^2_t(t \cdot v)^2+\alpha^2_b(b \cdot
+v)^2+(n\cdot v)^2} \\
+\hat{\Lambda}_l = \sqrt{\alpha^2_t(t \cdot l)^2+\alpha^2_b(b \cdot
+l)^2+(n\cdot l)^2}
+\end{equation}
+\]</span> <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">float</span> <span class="title function_">D_GGX_Anisotropic</span><span class="params">(<span class="type">float</span> NoH, <span class="type">const</span> vec3 h,</span></span><br><span class="line"><span class="params">    <span class="type">const</span> vec3 t, <span class="type">const</span> vec3 b, <span class="type">float</span> at, <span class="type">float</span> ab)</span> &#123;</span><br><span class="line">    <span class="type">float</span> ToH = dot(t, h);</span><br><span class="line">    <span class="type">float</span> BoH = dot(b, h);</span><br><span class="line">    <span class="type">float</span> a2 = at * ab;</span><br><span class="line">    highp vec3 v = vec3(ab * ToH, at * BoH, a2 * NoH);</span><br><span class="line">    highp <span class="type">float</span> v2 = dot(v, v);</span><br><span class="line">    <span class="type">float</span> w2 = a2 / v2;</span><br><span class="line">    <span class="keyword">return</span> a2 * w2 * w2 * (<span class="number">1.0</span> / PI);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure> ## Subsurface model TODO</p>
+<h2 id="cloth-model">Cloth model</h2>
+<p>与硬表面相比较，布料的反射探针更柔和，衰减更大，光照会有模糊的现象，这是由前向/后向散射造成的。
+### Specular BRDF [<a
+target="_blank" rel="noopener" href="https://google.github.io/filament/Filament.html#citation-ashikhmin07">Ashikhmin07</a>]使用逆高斯分布建模<span
+class="math inline">\(D\)</span> <span
+class="math display">\[D_{velvet}(v,h,\alpha) = c_{norm}(1 + 4
+\exp\left(\frac{-{\cot}^2\theta_{h}}{\alpha^2}\right))\]</span>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">float</span> <span class="title function_">D_Ashikhmin</span><span class="params">(<span class="type">float</span> roughness, <span class="type">float</span> NoH)</span> &#123;</span><br><span class="line">    <span class="comment">// Ashikhmin 2007, &quot;Distribution-based BRDFs&quot;</span></span><br><span class="line">	<span class="type">float</span> a2 = roughness * roughness;</span><br><span class="line">	<span class="type">float</span> cos2h = NoH * NoH;</span><br><span class="line">	<span class="type">float</span> sin2h = max(<span class="number">1.0</span> - cos2h, <span class="number">0.0078125</span>); </span><br><span class="line">    <span class="comment">// 2^(-14/2), so sin2h^2 &gt; 0 in fp16</span></span><br><span class="line">	<span class="type">float</span> sin4h = sin2h * sin2h;</span><br><span class="line">	<span class="type">float</span> cot2 = -cos2h / (a2 * sin2h);</span><br><span class="line">	<span class="keyword">return</span> <span class="number">1.0</span> / (PI * (<span class="number">4.0</span> * a2 + <span class="number">1.0</span>) * sin4h) * (<span class="number">4.0</span> * \<span class="built_in">exp</span>(cot2) + sin4h);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure> [<a
+target="_blank" rel="noopener" href="https://google.github.io/filament/Filament.html#citation-neubelt13">Neubelt13</a>]提供了一个归一化的版本</p>
+<p><span class="math display">\[D_{velvet}(v,h,\alpha) = \frac{1}{\pi(1
++ 4\alpha^2)} (1 + 4\frac{\exp(\frac{-{\cot}^2\theta_h}{\alpha^2})}{
+{sin}^4\theta_h})\]</span></p>
+<p>[<a
+target="_blank" rel="noopener" href="https://google.github.io/filament/Filament.html#citation-estevez17">Estevez17</a>]提出了"Charlie
+sheen"，使用正弦的指数来建模，参数化更自然和符合直觉，效果更柔和。 <span
+class="math display">\[D(m) = \frac{(2 + \frac{1}{\alpha})
+\sin^{\frac{1}{\alpha}}\theta_h}{2 \pi}\]</span> <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">float</span> <span class="title function_">D_Charlie</span><span class="params">(<span class="type">float</span> roughness, <span class="type">float</span> NoH)</span> &#123;</span><br><span class="line">    <span class="comment">// Estevez and Kulla 2017, &quot;Production Friendly Microfacet Sheen BRDF&quot;</span></span><br><span class="line">    <span class="type">float</span> invAlpha  = <span class="number">1.0</span> / roughness;</span><br><span class="line">    <span class="type">float</span> cos2h = NoH * NoH;</span><br><span class="line">    <span class="type">float</span> sin2h = max(<span class="number">1.0</span> - cos2h, <span class="number">0.0078125</span>); <span class="comment">// 2^(-14/2), so sin2h^2 &gt; 0 in fp16</span></span><br><span class="line">    <span class="keyword">return</span> (<span class="number">2.0</span> + invAlpha) * <span class="built_in">pow</span>(sin2h, invAlpha * <span class="number">0.5</span>) / (<span class="number">2.0</span> * PI);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+Filament使用了[<a
+target="_blank" rel="noopener" href="https://google.github.io/filament/Filament.html#citation-estevez17">Estevez17</a>]中的<span
+class="math inline">\(f_r\)</span> <span
+class="math display">\[f_{r}(v,h,\alpha) =
+\frac{D_{velvet}(v,h,\alpha)}{4(n\cdot l + n\cdot v - (n\cdot l)(n\cdot
+v))}\]</span></p>
+<h3 id="diffuse-brdf">Diffuse BRDF</h3>
+<p>布料模型的漫反射部分依然是Lambertian，但是为了加上一个可选的次表面散射项，漫反射部分需要稍加修改来保证能量守恒。这个额外项不是基于物理的，可用于模拟某些布料中光的散射、部分吸收和再发射。</p>
+<p>基本的漫反射项为 <span class="math display">\[f_{d}(v,h) =
+\frac{c_{diff}}{\pi}(1 - F(v,h))\]</span> <span class="math inline">\(1
+- F(v,h)\)</span>在漫反射中效果微弱，一般忽略。</p>
+<p>次表面散射是使用the wrapped diffuse lighting实现的，其能量守恒形式：
+<span class="math display">\[f_{d}(v,h) = \frac{c_{diff}}{\pi}(1 -
+F(v,h)) \left&lt; n\cdot l + \frac{w}{(1 + w)^2} \right&gt; \left&lt;
+c_{subsurface} + n\cdot l \right&gt;\]</span> 其中<span
+class="math inline">\(\left&lt;\cdot\right&gt;\)</span>表示clamp。<span
+class="math inline">\(w\)</span>是一个介于0和1之间的值，定义漫射光wrap的程度。为了避免引入另一个参数，我们固定<span
+class="math inline">\(w=0.5\)</span>。请注意，对于wrapped diffuse
+lighting，漫反射项不得乘以<span class="math inline">\(n\cdot
+l\)</span>。</p>
+<h3 id="parameterization">Parameterization</h3>
+<p>布料模型基本延续标准模型的参数，只是去掉了<strong>metallic</strong>和<strong>reflectance</strong>。新增的参数如下</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Parameter</th>
+<th>Definition</th>
+<th>Type&amp;Range</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>sheenColor</strong></td>
+<td>Specular tint to create two-tone specular fabrics (defaults to <span
+class="math inline">\(\sqrt{\textbf{baseColor}}\)</span>)</td>
+<td>Float3 [0...1]</td>
+</tr>
+<tr class="even">
+<td><strong>subsurfaceColor</strong></td>
+<td>Tint for the diffuse color after scattering and absorption through
+the material</td>
+<td>Float3 [0...1]</td>
+</tr>
+</tbody>
+</table>
+<h3 id="summary">Summary</h3>
+<p>完整的布料BRDF代码如下 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// specular BRDF</span></span><br><span class="line"><span class="type">float</span> D = distributionCloth(roughness, NoH);</span><br><span class="line"><span class="type">float</span> V = visibilityCloth(NoV, NoL);</span><br><span class="line">vec3  F = sheenColor;</span><br><span class="line">vec3 Fr = (D * V) * F;</span><br><span class="line"></span><br><span class="line"><span class="comment">// diffuse BRDF</span></span><br><span class="line"><span class="type">float</span> diffuse = diffuse(roughness, NoV, NoL, LoH);</span><br><span class="line"><span class="meta">#<span class="keyword">if</span> defined(MATERIAL_HAS_SUBSURFACE_COLOR)</span></span><br><span class="line"><span class="comment">// energy conservative wrap diffuse</span></span><br><span class="line">diffuse *= saturate((dot(n, light.l) + <span class="number">0.5</span>) / <span class="number">2.25</span>);</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line">vec3 Fd = diffuse * pixel.diffuseColor;</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">if</span> defined(MATERIAL_HAS_SUBSURFACE_COLOR)</span></span><br><span class="line"><span class="comment">// cheap subsurface scatter</span></span><br><span class="line">Fd *= saturate(subsurfaceColor + NoL);</span><br><span class="line">vec3 color = Fd + Fr * NoL;</span><br><span class="line">color *= (lightIntensity * lightAttenuation) * lightColor;</span><br><span class="line"><span class="meta">#<span class="keyword">else</span></span></span><br><span class="line">vec3 color = Fd + Fr;</span><br><span class="line">color *= (lightIntensity * lightAttenuation * NoL) * lightColor;</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br></pre></td></tr></table></figure></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/CG/" rel="tag"># CG</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2022/04/21/Multiple-Importance-Sampling/" rel="next" title="Multiple Importance Sampling">
+                <i class="fa fa-chevron-left"></i> Multiple Importance Sampling
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2022/05/01/Spherical-Harmonics/" rel="prev" title="Spherical Harmonics">
+                Spherical Harmonics <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+      <div id="sidebar-dimmer"></div>
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/%7C%7C%20archive">
+              
+                  <span class="site-state-item-count">26</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">12</span>
+                  <span class="site-state-item-name">categories</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">16</span>
+                  <span class="site-state-item-name">tags</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#standard-model"><span class="nav-number">1.</span> <span class="nav-text">Standard model</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#specular-brdf-cook-torrance-approximation"><span class="nav-number">1.1.</span> <span class="nav-text">Specular BRDF :
+Cook-Torrance Approximation</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#energy-loss"><span class="nav-number">1.2.</span> <span class="nav-text">Energy Loss</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#kulla-conty"><span class="nav-number">1.2.1.</span> <span class="nav-text">Kulla-Conty</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#lagarde"><span class="nav-number">1.2.2.</span> <span class="nav-text">Lagarde</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#remapping"><span class="nav-number">1.3.</span> <span class="nav-text">remapping</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#crafting-filament-pbm"><span class="nav-number">1.4.</span> <span class="nav-text">Crafting Filament PBM</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#clear-coat-model"><span class="nav-number">1.5.</span> <span class="nav-text">Clear coat model</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#cloth-model"><span class="nav-number">2.</span> <span class="nav-text">Cloth model</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#diffuse-brdf"><span class="nav-number">2.1.</span> <span class="nav-text">Diffuse BRDF</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#parameterization"><span class="nav-number">2.2.</span> <span class="nav-text">Parameterization</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#summary"><span class="nav-number">2.3.</span> <span class="nav-text">Summary</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Silven Huang</span>
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>

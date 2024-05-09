@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon32.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon16.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="CG," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="重要性采样作为渲染的核心技术，无论是离线还是实时中都有大量应用，是所有光照学习的基础。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Multiple Importance Sampling">
+<meta property="og:url" content="https://htplt.github.io/2022/04/21/Multiple-Importance-Sampling/index.html">
+<meta property="og:site_name" content="Output">
+<meta property="og:description" content="重要性采样作为渲染的核心技术，无论是离线还是实时中都有大量应用，是所有光照学习的基础。">
+<meta property="og:locale">
+<meta property="og:image" content="https://htplt.github.io/2022/04/21/Multiple-Importance-Sampling/solid_angle.jpg">
+<meta property="og:image" content="https://htplt.github.io/2022/04/21/Multiple-Importance-Sampling/solid_angle_area_light.png">
+<meta property="article:published_time" content="2022-04-21T12:16:17.000Z">
+<meta property="article:modified_time" content="2022-12-12T15:55:55.999Z">
+<meta property="article:author" content="Silven Huang">
+<meta property="article:tag" content="CG">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://htplt.github.io/2022/04/21/Multiple-Importance-Sampling/solid_angle.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"hide","offset":12,"b2t":false,"scrollpercent":false,"onmobile":true},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://htplt.github.io/2022/04/21/Multiple-Importance-Sampling/"/>
+
+
+
+
+
+  <title>Multiple Importance Sampling | Output</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 7.2.0"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Output</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+            About
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+            Archives
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://htplt.github.io/2022/04/21/Multiple-Importance-Sampling/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Output">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Multiple Importance Sampling</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2022-04-21T20:16:17+08:00">
+                2022-04-21
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/math/" itemprop="url" rel="index">
+                    <span itemprop="name">math</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>重要性采样作为渲染的核心技术，无论是离线还是实时中都有大量应用，是所有光照学习的基础。
+<span id="more"></span> ## Mote Carlo integration 使用随机采样概率模型<span
+class="math inline">\(P\)</span>计算积分，并用采样分布<span
+class="math inline">\(P\)</span>的pdf(<strong>probability density
+function</strong> <span
+class="math inline">\(p(x)\)</span>)进行归一化，设<span
+class="math inline">\(N\)</span>个采样点<span
+class="math inline">\(X_1,...X_N\)</span> <span
+class="math display">\[I=\int_\Omega f(x)d\mu(x)\approx
+F_N=\frac{1}{N}\sum_{i=1}^N\frac{f(X_i)}{p(X_i)}\]</span>
+当采样分布<span class="math inline">\(P\)</span>的CDF与目标被积函数<span
+class="math inline">\(f(x)\)</span>成比例关系时，<span
+class="math inline">\(p(x)=kf(x)\)</span>，积分方差为0，只需1
+sample即收敛 <span
+class="math display">\[D[F_N]=D[\frac{1}{N}\sum_{i=1}^N\frac{f(X_i)}{p(X_i)}]=\frac{1}{N}D[\frac{f(x)}{p(x)}]=\frac{1}{N}D[\frac{f(x)}{cf(x)}]=0\]</span></p>
+<h2 id="the-inversion-method">The Inversion Method</h2>
+<p>输入一个均匀分布<span
+class="math inline">\(U(0,1)\)</span>的随机变量<span
+class="math inline">\(X\)</span>，如何将这个随机变量通过<span
+class="math inline">\(Y=f(X)\)</span>映射到其他的采样分布<span
+class="math inline">\(Q\)</span>。 即 <span class="math display">\[X\sim
+U(0,1)\rightarrow f(X)\sim Q =Y\sim Q\]</span> 设<span
+class="math inline">\(Q_Y(\cdot)\)</span>为<span
+class="math inline">\(Q\)</span>的CDF，<span
+class="math inline">\(U_X(\cdot)\)</span>为均匀分布<span
+class="math inline">\(U(0,1)\)</span>的CDF，则有 <span
+class="math display">\[Q_Y(x) = P(Y\leq x)=P(f(X)\leq x)=P(X\leq
+f^{-1}(x)) = U_X(f^{-1}(x))\]</span> 对于均匀分布<span
+class="math inline">\(U(0,1)\)</span>的CDF，<span
+class="math inline">\(U_X(x)=P(X\leq x)=x\)</span>，有<span
+class="math inline">\(Q_Y(x) = f^{-1}(x)\)</span> <span
+class="math display">\[f(x)=Q_Y^{-1}(x)\]</span>
+在使用均匀分布的随机变量<span
+class="math inline">\(X\)</span>时，带入目标分布<span
+class="math inline">\(Q\)</span>的CDF的逆函数<span
+class="math inline">\(Q^{-1}(x)\)</span>即可得到目标分布。</p>
+<h3 id="more-general-case">More General Case</h3>
+<p>显然<span class="math inline">\(P(f(X)\leq x)=P(X\leq
+f^{-1}(x))\)</span>成立的前提，是反函数存在，也就是<span
+class="math inline">\(f:X\rightarrow
+Y\)</span>是严格单调的（一一对应）。这一点其实由概率分布的特点保证，如果<span
+class="math inline">\(X\)</span>多个值映射到一个<span
+class="math inline">\(y\)</span>，那么就不能明确描述特定<span
+class="math inline">\(y\)</span>的pdf。且CDF有 <span
+class="math display">\[P(Y\leq f(x))=P(X\leq x) \\
+P_y(y)=P_y(f(x))=P_x(x)\]</span> 对CDF作微分 <span
+class="math display">\[p_y(y)=(\frac{\text{d}y}{\text{d}x})^{-1}p_x(x)\]</span></p>
+<h4 id="multiple-dimensions">Multiple Dimensions</h4>
+<p>假设<span class="math inline">\(X\)</span>为<span
+class="math inline">\(n\)</span>维随机变量，<span
+class="math inline">\(Y=T(X)\)</span>，<span
+class="math inline">\(T\)</span>为双射，变换后的cdf为 <span
+class="math display">\[p_y(y)=p_y(f(x))=\frac{p_x(x)}{|J_T(x)|}\]</span>
+<span class="math display">\[J_T(x)=\begin{bmatrix}
+\partial T_1/\partial x_1  &amp; \cdots\ &amp; \partial T_1/\partial x_n
+\\
+\vdots &amp; \ddots  &amp; \vdots  \\
+\partial T_n/\partial x_1  &amp; \cdots\ &amp; \partial T_n/\partial
+x_n\\
+\end{bmatrix}
+\]</span> <span class="math inline">\(J_T(x)\)</span>为Jacobian矩阵</p>
+<p>多维的转换公式可以让我们获得各个坐标系之间的关系</p>
+<h5 id="polar-coordinates">Polar Coordinates</h5>
+<p><span class="math display">\[
+x=r\cos\theta \\
+y=r\sin\theta
+\]</span> <span class="math display">\[
+|J_T(x)|=
+\left |\begin{matrix}
+\partial x/\partial r  &amp; \partial x/\partial \theta \\
+\partial y/\partial r  &amp; \partial y/\partial \theta
+\end{matrix}\right |
+=
+\left |\begin{matrix}
+\cos\theta  &amp; -r\sin\theta \\
+\sin\theta &amp; r\cos\theta
+\end{matrix}\right |
+=r
+\]</span> <span class="math display">\[p(r,\theta)=rp(x,y)\]</span></p>
+<h5 id="spherical-coordinates">Spherical Coordinates</h5>
+<p><span class="math display">\[
+x=r\sin\theta\cos\phi\\
+y=r\sin\theta\sin\phi\\
+z=r\cos\theta
+\]</span> <span class="math display">\[
+|J_T(x)|=
+\left |\begin{matrix}
+\partial x/\partial r  &amp; \partial x/\partial \theta &amp; \partial
+x/\partial \phi \\
+\partial y/\partial r  &amp; \partial y/\partial \theta &amp; \partial
+y/\partial \phi \\
+\partial z/\partial r  &amp; \partial z/\partial \theta &amp; \partial
+z/\partial \phi \\
+\end{matrix}\right |
+=
+\left |\begin{matrix}
+\sin\theta\cos\phi  &amp; r\cos\theta\cos\phi &amp; -r\sin\theta\sin\phi
+\\
+\sin\theta\sin\phi   &amp; r\cos\theta\sin\phi &amp; r\sin\theta\cos\phi
+\\
+\cos\theta  &amp; -r\sin\theta &amp; 0 \\
+\end{matrix}\right |
+=r^2\sin\theta
+\]</span> <span class="math display">\[
+p(r,\theta,\phi)=r^2\sin\theta p(x,y,z)
+\]</span></p>
+<h5 id="solid-angle">Solid Angle</h5>
+<img src="/2022/04/21/Multiple-Importance-Sampling/solid_angle.jpg" class="" title="$\text{d}\omega&#x3D;\sin\theta\text{d}\theta\text{d}\phi$">
+<p>那么就有 <span
+class="math display">\[\int_{\Omega^+}p(\omega)d\omega=\int_{\Omega^+}p(\omega)\sin\theta
+d\theta d\phi=1 \\
+p(\theta,\phi)=\sin\theta p(\omega)\]</span></p>
+<h3 id="hemisphere-distribution">Hemisphere Distribution</h3>
+<p>立体角pdf为<span
+class="math inline">\(p(\omega)=\frac{1}{2\pi}\)</span>，由<span
+class="math inline">\(p(\theta,\phi)=sin\theta
+p(\omega)\)</span>，极坐标下</p>
+<p><span
+class="math display">\[p(\theta,\phi)=\frac{\sin\theta}{2\pi}\]</span>
+边缘积分得到<span class="math inline">\(\theta\)</span>的pdf。 <span
+class="math display">\[pdf(\theta)=\int_0^{2\pi}p(\theta,\phi)d\phi=\sin\theta
+\\
+pdf(\phi|\theta)=\frac{p(\theta,\phi)}{p(\theta)}=\frac{1}{2\pi}\]</span>
+积分得到CDF和逆函数 <span
+class="math display">\[P(\theta)=\int_0^\theta\sin x dx=1-\cos\theta \\
+P(\phi|\theta)=\int_0^\phi\frac{1}{2\pi}dx=\frac{\phi}{2\pi}\]</span>
+<span class="math inline">\(\xi_1,\xi_2\)</span>为<span
+class="math inline">\(U(0,1)\)</span>的独立随机变量，<span
+class="math inline">\(1-\xi_1\)</span>可替换为<span
+class="math inline">\(\xi_1\)</span> <span class="math display">\[\theta
+= \cos^{-1}\xi_1 \\
+\phi = 2\pi\xi_2\]</span> <span class="math display">\[
+\begin{cases}
+x=\sin\theta\cos\phi=\cos(2\pi\xi_2)\sqrt{1-\xi_1^2}\\
+y=\sin\theta\sin\phi=\sin(2\pi\xi_2)\sqrt{1-\xi_1^2}\\
+z=\cos\theta=\xi_1
+\end{cases}
+\]</span></p>
+<h3 id="cosine-weighted-hemisphere-distribution">Cosine-weighted
+Hemisphere Distribution</h3>
+<p>立体角pdf为<span
+class="math inline">\(p(\omega)\propto\cos\theta\)</span>，<span
+class="math inline">\(\int_{\Omega^+}p(\omega)d\omega=\int_{\Omega^+}k\cos\theta\sin\theta
+d\theta d\phi=1\)</span> 得到 <span
+class="math display">\[p(\theta,\phi)=\frac{1}{\pi}\cos\theta\sin\theta\]</span>
+边缘积分得到pdf，再积分得到CDF <span
+class="math display">\[pdf(\theta)=\int_0^{2\pi}p(\theta,\phi)d\phi=\sin2\theta
+\\
+pdf(\phi|\theta)=\frac{p(\theta,\phi)}{p(\theta)}=\frac{1}{2\pi}\]</span>
+<span class="math display">\[P(\theta)=\int_0^\theta\sin 2x
+dx=1-\cos^2\theta \\
+P(\phi|\theta)=\int_0^\phi\frac{1}{2\pi}dx=\frac{\phi}{2\pi}\]</span>
+<span class="math inline">\(\xi_1,\xi_2\)</span>为<span
+class="math inline">\(U(0,1)\)</span>的独立随机变量 <span
+class="math display">\[
+\theta = \cos^{-1}\sqrt{1-\xi_1}\\
+\phi = 2\pi\xi_2
+\]</span> <span class="math display">\[
+\begin{cases}
+x=\sin\theta\cos\phi=\cos(2\pi\xi_2)\sqrt{\xi_1}\\
+y=\sin\theta\sin\phi=\sin(2\pi\xi_2)\sqrt{\xi_1}\\
+z=\cos\theta=\sqrt{1-\xi_1}
+\end{cases}
+\]</span></p>
+<h2 id="importance-sampling">Importance Sampling</h2>
+<h3 id="rendering-equation">Rendering Equation</h3>
+<p><span class="math display">\[L(p,\omega_o)=L_e(p,\omega_o)+
+\int_\Omega
+L_i(p,\omega_i)f(\omega_i,\omega_o)|\omega_i\cdot\omega_g|d\omega_i\]</span></p>
+<h3 id="sampling-the-bsdf">Sampling the BSDF</h3>
+<p>BSDF中的仅讨论BRDF，<span
+class="math inline">\(f(\omega_i,\omega_o)\)</span>为BRDF，为了解渲染方程我们需要采样<span
+class="math inline">\(\omega_i\)</span>计算<span
+class="math inline">\(f(\omega_i,\omega_o)|\omega_i\cdot\omega_g|\)</span></p>
+<h4 id="sampling-d-ndf">Sampling <span class="math inline">\(D\)</span>
+(NDF)</h4>
+<p><a
+target="_blank" rel="noopener" href="https://pbr-book.org/3ed-2018/Light_Transport_I_Surface_Reflection/Sampling_Reflection_Functions">PBRT</a>中有对Beckmann的采样。对于GGX和Blinn的采样可见<a
+target="_blank" rel="noopener" href="https://agraphicsguynotes.com/posts/sample_microfacet_brdf/">Cao's
+Blog</a>，这里写一下GGX的采样方法。 <span
+class="math display">\[D_{GGX}(h)=\frac{\alpha^2}{\pi(\cos^2\theta_h(\alpha^2-1)+1)^2}\]</span>
+根据立体角的定义 <span class="math display">\[\int_{\Omega^+}
+D(\omega)(\omega\cdot n)dw=1 \\
+\int_{\Omega^+}D(\omega)\cos\theta d\omega
+=\int_{\Omega^+}p(\omega)d\omega \\
+=\int_{\Omega^+}p(\omega)\sin\theta d\theta d\phi
+=\int_{\Omega^+}p(\theta,\phi)d\theta d\phi
+=1\]</span> 则有<span
+class="math inline">\(p(\omega)=D(\omega)\cos\theta\)</span>，<span
+class="math inline">\(p(\theta,\phi)=p(\omega)\sin\theta\)</span> <span
+class="math display">\[
+p(h)=\frac{\alpha^2\cos\theta}{\pi(\cos^2\theta(\alpha^2-1)+1)^2}\\
+p(\theta,\phi)=\frac{\alpha^2\cos\theta\sin\theta}{\pi(\cos^2\theta(\alpha^2-1)+1)^2}
+\]</span> 对pdf积分 <span
+class="math display">\[p_h(\theta)=\int_0^{2\pi}p_h(\theta,\phi)=\frac{2\alpha^2\cos\theta\sin\theta}{(\cos^2\theta(\alpha^2-1)+1)^2}
+\\
+P_h(\theta)=\int_0^\theta\frac{2\alpha^2\cos t\sin t}{(\cos^2
+t(\alpha^2-1)+1)^2}dt\\
+=\frac{\alpha^2}{\cos^2(\alpha^2-1)^2+(\alpha^2-1)}-\frac{1}{\alpha^2-1}
+\]</span> <span class="math inline">\(\xi_1,\xi_2\)</span>为<span
+class="math inline">\(U(0,1)\)</span>的独立随机变量 <span
+class="math display">\[
+\theta=\arccos\sqrt{\frac{1-\xi_1}{\xi_1(\alpha^2-1)+1}}\\
+\phi=2\pi\xi_2
+\]</span> 现在我们可以随机采样<span
+class="math inline">\(\omega_h\)</span>，但我们需要采样光线<span
+class="math inline">\(\omega_i\)</span>，有如下反射关系 <span
+class="math display">\[\omega_i=2|\omega_o\cdot\omega_m|\omega_m-\omega_o\]</span>
+则反射变换的Jacobian行列式(证明见<a
+target="_blank" rel="noopener" href="https://www.graphics.cornell.edu/~bjw/wardnotes.pdf">Notes on the
+Ward BRDF</a>,<a
+target="_blank" rel="noopener" href="https://schuttejoe.github.io/post/ggximportancesamplingpart1/">explanation</a>)为
+<span class="math display">\[|J_R|=4|\omega_o\cdot\omega_m|\]</span>
+那么<span class="math inline">\(\omega_i\)</span>的pdf为 <span
+class="math display">\[p_i(\omega_m,\omega_o)=\frac{D(\omega_m)\omega_g\cdot\omega_m}{4|\omega_o\cdot\omega_m|}\]</span>
+需要计算的采样值为（使用pdf归一化） <span
+class="math display">\[\frac{f(\omega_i,\omega_o)|\omega_i\cdot\omega_g|}{p_i(\omega_m,\omega_o)}=\frac{F(\omega_i,\omega_h)G(\omega_i,\omega_o,\omega_h)|\omega_o\cdot\omega_h|}{|\omega_o\cdot\omega_g||\omega_h\cdot\omega_g|}\]</span></p>
+<p><a
+target="_blank" rel="noopener" href="https://schuttejoe.github.io/post/ggximportancesamplingpart2/">A
+Simpler and Exact Sampling Routine for the GGX Distribution of Visible
+Normals</a> ### Sampling the light source</p>
+<img src="/2022/04/21/Multiple-Importance-Sampling/solid_angle_area_light.png" class="" title="$d\omega$与$dA$的关系">
+<p><span
+class="math display">\[d\omega_i=\frac{dA\cos\theta_o}{r^2}\]</span>
+对于图中的矩形光源，可以直接在光源上采样并积分，pdf为<span
+class="math inline">\(\frac{1}{A}\)</span></p>
+<p>对于更多的光源，如球形，三角形等，见<a
+target="_blank" rel="noopener" href="https://pbr-book.org/3ed-2018/Light_Transport_I_Surface_Reflection/Sampling_Light_Sources">PBRT</a>
+## Multiple Importance Sampling
+多重重要性使用多种pdf进行采样，并在每种pdf内用weight <span
+class="math inline">\(w_i(\cdot)\)</span>做归一化。<span
+class="math inline">\(X_{i,j}\)</span>表示第i种pdf中的第j个样本。而每种pdf可以与乘积形式的被积函数中的某些部分成正比来加速收敛。</p>
+<p><span
+class="math display">\[F=\sum_{i=1}^n\frac{1}{n_i}\sum_{i=1}^{n_i}w_i(X_{i,j})\frac{f(X_{i,j})
+} {p_i(X_ {i,j})}\]</span></p>
+<p>要保证多种pdf的采样结果是无偏的，需要满足</p>
+<ul>
+<li><span class="math inline">\(\sum_{i=1}^nw_i(x)=1,\forall f(x)\neq
+0\)</span></li>
+<li><span class="math inline">\(w_i(x)=0,\forall p_i(x)=0\)</span></li>
+</ul>
+<p>weight有两种计算方式 ### Balance heuristic <span
+class="math display">\[w_s(x)=\frac{n_sp_s(x)}{\sum_i
+n_ip_i(x)}\]</span> 最直觉的归一化，在哪个分布里pdf大，weight就高 ###
+Power heuristic <span
+class="math display">\[w_s(x)=\frac{(n_sp_s(x))^\beta}{\sum_i
+(n_ip_i(x))^\beta}\]</span>
+扩展了Balance的方法，继续扩大pdf之间的差距，类似softmax。Veach的<a
+target="_blank" rel="noopener" href="https://cseweb.ucsd.edu/~viscomp/classes/cse168/sp21/readings/veach.pdf">原文</a>中建议<span
+class="math inline">\(\beta=2\)</span>效果较好</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/CG/" rel="tag"># CG</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2021/10/27/What-is-an-RKHS-2/" rel="next" title="What is an RKHS [2]">
+                <i class="fa fa-chevron-left"></i> What is an RKHS [2]
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2022/04/23/Material-System-in-Filament-%E6%9D%90%E8%B4%A8%E6%A8%A1%E5%9E%8B/" rel="prev" title="Material System in Filament : 材质模型">
+                Material System in Filament : 材质模型 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+      <div id="sidebar-dimmer"></div>
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/%7C%7C%20archive">
+              
+                  <span class="site-state-item-count">26</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">12</span>
+                  <span class="site-state-item-name">categories</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">16</span>
+                  <span class="site-state-item-name">tags</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#the-inversion-method"><span class="nav-number">1.</span> <span class="nav-text">The Inversion Method</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#more-general-case"><span class="nav-number">1.1.</span> <span class="nav-text">More General Case</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#multiple-dimensions"><span class="nav-number">1.1.1.</span> <span class="nav-text">Multiple Dimensions</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#polar-coordinates"><span class="nav-number">1.1.1.1.</span> <span class="nav-text">Polar Coordinates</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#spherical-coordinates"><span class="nav-number">1.1.1.2.</span> <span class="nav-text">Spherical Coordinates</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#solid-angle"><span class="nav-number">1.1.1.3.</span> <span class="nav-text">Solid Angle</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#hemisphere-distribution"><span class="nav-number">1.2.</span> <span class="nav-text">Hemisphere Distribution</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#cosine-weighted-hemisphere-distribution"><span class="nav-number">1.3.</span> <span class="nav-text">Cosine-weighted
+Hemisphere Distribution</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#importance-sampling"><span class="nav-number">2.</span> <span class="nav-text">Importance Sampling</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#rendering-equation"><span class="nav-number">2.1.</span> <span class="nav-text">Rendering Equation</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#sampling-the-bsdf"><span class="nav-number">2.2.</span> <span class="nav-text">Sampling the BSDF</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#sampling-d-ndf"><span class="nav-number">2.2.1.</span> <span class="nav-text">Sampling \(D\)
+(NDF)</span></a></li></ol></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Silven Huang</span>
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>
