@@ -87,7 +87,7 @@
 <meta property="og:description" content="\(f(x)\),\(g(x)\) integrable on \([a,b]\)">
 <meta property="og:locale">
 <meta property="article:published_time" content="2021-03-30T02:29:35.000Z">
-<meta property="article:modified_time" content="2024-05-09T09:45:18.873Z">
+<meta property="article:modified_time" content="2024-07-14T09:56:47.010Z">
 <meta property="article:author" content="Silven Huang">
 <meta property="article:tag" content="CG">
 <meta name="twitter:card" content="summary">
@@ -343,9 +343,20 @@ class="math display">\[[\int_a^bf(x)g(x)dx]^2\leq\int_a^bf^2(x)dx\cdot\int_a^bg^
 <h3 id="minkowski">Minkowski</h3>
 <p><span
 class="math display">\[\{\int_a^b[f(x)+g(x)]^2dx\}^\frac{1}{2}\leq\{\int_a^bf^2(x)dx\}^\frac{1}{2}+\{\int_a^bg^2(x)dx\}^\frac{1}{2}\]</span></p>
+<h3 id="markovs-inequality">Markov's inequality</h3>
+<p><span class="math inline">\(X\)</span> is nonnegative random variable
+and <span class="math inline">\(a&gt;0\)</span> <span
+class="math display">\[P(X\ge a)\leq\frac{E(X)}{a}\]</span></p>
 <h3 id="chebychev">Chebychev</h3>
-<p><span
-class="math display">\[P(x&gt;t)\leq\frac{\sigma^2}{\sigma^2+(t-\mu)^2}\]</span></p>
+<p><span class="math inline">\(k&gt;0\)</span> <span
+class="math display">\[P(|X-\mu|\ge k\sigma) \leq
+\frac{1}{k^2}\]</span></p>
+<h4 id="cantellis-inequality">Cantelli's inequality</h4>
+<p>to improve the sharpness of the bound, better at one-sided tail
+bounds <span
+class="math display">\[P(X-\mu\ge\lambda)\leq\frac{\sigma^2}{\sigma^2+\lambda^2},\lambda&gt;0\]</span>
+<span class="math display">\[P(X\ge
+t)\leq\frac{\sigma^2}{\sigma^2+(t-\mu)^2}\]</span></p>
 <h3 id="the-classic-approximation">The Classic Approximation</h3>
 <p><span class="math display">\[\int_\Omega
 f(x)g(x)dx\approx\frac{\int_\Omega f(x)dx}{\int_\Omega
@@ -487,7 +498,7 @@ class="math display">\[\frac{1}{N}\sum_{k=1}^N\frac{L_i(l_k)f(l_k,v)cos\theta_{l
               
                 <a href="/archives/%7C%7C%20archive">
               
-                  <span class="site-state-item-count">26</span>
+                  <span class="site-state-item-count">28</span>
                   <span class="site-state-item-name">posts</span>
                 </a>
               </div>
@@ -542,7 +553,7 @@ class="math display">\[\frac{1}{N}\sum_{k=1}^N\frac{L_i(l_k)f(l_k,v)cos\theta_{l
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#schwarz"><span class="nav-number">1.</span> <span class="nav-text">Schwarz</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#minkowski"><span class="nav-number">2.</span> <span class="nav-text">Minkowski</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#chebychev"><span class="nav-number">3.</span> <span class="nav-text">Chebychev</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#the-classic-approximation"><span class="nav-number">4.</span> <span class="nav-text">The Classic Approximation</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#light-precompute-ibl"><span class="nav-number">4.1.</span> <span class="nav-text">light precompute (IBL)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#shadow"><span class="nav-number">4.2.</span> <span class="nav-text">shadow</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#split-sum-integral---sum"><span class="nav-number">4.3.</span> <span class="nav-text">(split sum) integral -&gt; sum</span></a></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#schwarz"><span class="nav-number">1.</span> <span class="nav-text">Schwarz</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#minkowski"><span class="nav-number">2.</span> <span class="nav-text">Minkowski</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#markovs-inequality"><span class="nav-number">3.</span> <span class="nav-text">Markov&#39;s inequality</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#chebychev"><span class="nav-number">4.</span> <span class="nav-text">Chebychev</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#cantellis-inequality"><span class="nav-number">4.1.</span> <span class="nav-text">Cantelli&#39;s inequality</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#the-classic-approximation"><span class="nav-number">5.</span> <span class="nav-text">The Classic Approximation</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#light-precompute-ibl"><span class="nav-number">5.1.</span> <span class="nav-text">light precompute (IBL)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#shadow"><span class="nav-number">5.2.</span> <span class="nav-text">shadow</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#split-sum-integral---sum"><span class="nav-number">5.3.</span> <span class="nav-text">(split sum) integral -&gt; sum</span></a></li></ol></li></ol></div>
             
 
           </div>
@@ -562,7 +573,7 @@ class="math display">\[\frac{1}{N}\sum_{k=1}^N\frac{L_i(l_k)f(l_k,v)cos\theta_{l
 
     <footer id="footer" class="footer">
       <div class="footer-inner">
-        <div class="copyright">&copy; <span itemprop="copyrightYear">2024</span>
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2025</span>
   <span class="with-love">
     <i class="fa fa-user"></i>
   </span>

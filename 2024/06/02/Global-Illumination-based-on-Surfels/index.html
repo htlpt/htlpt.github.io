@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon32.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon16.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="Surfels are discrete surfaces  normal, position, radius, irradiance  WORLDSPACE uniform grid&#x2F;cells rigid geometry  surfels tracks a unique transformID of the geometry, (meshes writes transfor">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Output">
+<meta property="og:url" content="https://htplt.github.io/2024/06/02/Global-Illumination-based-on-Surfels/index.html">
+<meta property="og:site_name" content="Output">
+<meta property="og:description" content="Surfels are discrete surfaces  normal, position, radius, irradiance  WORLDSPACE uniform grid&#x2F;cells rigid geometry  surfels tracks a unique transformID of the geometry, (meshes writes transfor">
+<meta property="og:locale">
+<meta property="article:published_time" content="2024-06-02T05:06:11.109Z">
+<meta property="article:modified_time" content="2024-06-04T13:45:58.156Z">
+<meta property="article:author" content="Silven Huang">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"hide","offset":12,"b2t":false,"scrollpercent":false,"onmobile":true},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://htplt.github.io/2024/06/02/Global-Illumination-based-on-Surfels/"/>
+
+
+
+
+
+  <title> | Output</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 7.2.0"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Output</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+            About
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+            Archives
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://htplt.github.io/2024/06/02/Global-Illumination-based-on-Surfels/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Output">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline"></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2024-06-02T13:06:11+08:00">
+                2024-06-02
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="surfels-are-discrete-surfaces">Surfels are discrete
+surfaces</h1>
+<ul>
+<li>normal, position, radius, irradiance<br />
+</li>
+<li>WORLDSPACE uniform grid/cells</li>
+<li>rigid geometry
+<ul>
+<li>surfels tracks a unique transformID of the geometry, (meshes writes
+transformID in GBuffer)</li>
+<li>a global transform buffer is maintained</li>
+</ul></li>
+<li>skinned mesh
+<ul>
+<li>skinned geometry writes boneID(with highest weights), transform ID
+to GBuffer (but only one bone)</li>
+</ul></li>
+</ul>
+<h1 id="application-on-screen">Application on Screen</h1>
+<ul>
+<li>like deferred lights (culling), find pixel's cell, apply
+attenuation(Mahalanobis metric, normal direction)</li>
+<li>scales/spawn/remove as constant projection on screen</li>
+</ul>
+<h1 id="surfel-management">Surfel Management</h1>
+<ul>
+<li>pre-allocate/free object stack</li>
+</ul>
+<h1 id="spawning">Spawning</h1>
+<ul>
+<li>calculate lowest coverage in 16*16 pixels(per tile), probs
+propotional to projected area(a pixel coveres)</li>
+</ul>
+<h1 id="irradiance-calculation">Irradiance Calculation</h1>
+<ul>
+<li>undirectional path tracing from queried surfels, with explicit light
+path.</li>
+<li>allocate more path for newly spawned, slowly decrease the sample
+rate over frame.</li>
+<li>limit path length(to 1), amortize bounces over frames</li>
+</ul>
+<h2 id="ray-guiding">Ray Guiding</h2>
+<pre><code>- store luminance 6x6 map over hemisphere
+- 8b texel + 16b scaling / surfel
+- inverse sampling discrete distributions</code></pre>
+<p>[muller17]Practical Path Guiding for Efficient Light-Transport
+Simulation [mccool97]Probability Trees</p>
+<ul>
+<li>sharing irradiance between surfels (when variance is high)</li>
+</ul>
+<h2 id="ray-sorting">Ray Sorting</h2>
+<pre><code>- acceleration structure locality
+- ray binning (battlefield 5) (2 passes)
+    - cell location for spatial hash  12bits
+    - ray direction orientaion        4bits</code></pre>
+<h2 id="many-light-sampling">Many Light Sampling</h2>
+<ul>
+<li><p>stochastic lightcuts [lin20]Real-Time Stochastic
+Lightcuts</p></li>
+<li><p>reservoir sampling []ReSTIR</p></li>
+</ul>
+<h1 id="adaptive-integration">Adaptive Integration</h1>
+<ul>
+<li><p>give up Monte Carlo &amp; fully converging</p></li>
+<li><p>Exponetial Moving Average(EMA) <span class="math display">\[
+\hat{x}_0 = 0 \\
+\hat{x}_{n+1} = lerp(\hat{x_{n}},x_{n+1},k)
+\]</span></p></li>
+<li><p>estimate short-term (mean, variance)</p></li>
+<li><p>Adapt blend factor 𝑘</p></li>
+<li><p>Reduce if variance high</p></li>
+<li><p>Increase if mean far from short-term statistics</p></li>
+</ul>
+<h1 id="transparency">Transparency</h1>
+<p>ray traced probes adaptive integrator(MSME) [Sloan08]De-ringing
+[Ramamoorth01]Reconstruction</p>
+<h2 id="rt-probes-volume-structure">RT Probes Volume Structure</h2>
+<h2 id="clipmap-update-algorithm">Clipmap Update Algorithm</h2>
+<h1 id="frame-overview">Frame Overview</h1>
+<h2 id="persistent">Persistent</h2>
+<ul>
+<li>Positional update</li>
+<li>Recycle</li>
+<li>Grid allocation</li>
+<li><strong>Ray sorting</strong></li>
+<li><strong>Raytrace</strong></li>
+<li>Clipmap Update</li>
+<li><strong>Probe Trace</strong></li>
+</ul>
+<h2 id="spawn">Spawn</h2>
+<ul>
+<li><strong>Geometeric normal reconstruction</strong></li>
+<li><strong>Gap fill</strong></li>
+<li><strong>Ray sorting</strong></li>
+<li><strong>Ray trace</strong></li>
+<li>Write to persistent storage</li>
+<li>Write to probe volumes</li>
+</ul>
+<h2 id="filtering">Filtering</h2>
+<ul>
+<li>Spatial denoise</li>
+<li>Temporal denoise</li>
+</ul>
+<h2 id="apply">Apply</h2>
+<ul>
+<li>Inject newly spawned</li>
+<li>Lighting apply (runs at quarter area resolution)</li>
+<li>Lighting upsample</li>
+<li>Clipmap Sampling</li>
+</ul>
+<h1 id="refs">refs</h1>
+<ul>
+<li>raytracing in hybrid real-time rendering [dd18 seed]</li>
+<li>Ray-tracing Gems (CH25 Hybrid Rendering for Real-Time Ray
+Tracing)</li>
+<li>Global Illumination based on surfels [sig 21]</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2024/05/09/Bayesian-Inference-VAEs/" rel="next" title="Bayesian Inference (VAEs)">
+                <i class="fa fa-chevron-left"></i> Bayesian Inference (VAEs)
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2024/07/15/Variance-Reduction-for-Monte-Carlo-estimators/" rel="prev" title="Variance Reduction for Monte Carlo estimators">
+                Variance Reduction for Monte Carlo estimators <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+      <div id="sidebar-dimmer"></div>
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/%7C%7C%20archive">
+              
+                  <span class="site-state-item-count">28</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">12</span>
+                  <span class="site-state-item-name">categories</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">16</span>
+                  <span class="site-state-item-name">tags</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#surfels-are-discrete-surfaces"><span class="nav-number">1.</span> <span class="nav-text">Surfels are discrete
+surfaces</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#application-on-screen"><span class="nav-number">2.</span> <span class="nav-text">Application on Screen</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#surfel-management"><span class="nav-number">3.</span> <span class="nav-text">Surfel Management</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#spawning"><span class="nav-number">4.</span> <span class="nav-text">Spawning</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#irradiance-calculation"><span class="nav-number">5.</span> <span class="nav-text">Irradiance Calculation</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#ray-guiding"><span class="nav-number">5.1.</span> <span class="nav-text">Ray Guiding</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ray-sorting"><span class="nav-number">5.2.</span> <span class="nav-text">Ray Sorting</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#many-light-sampling"><span class="nav-number">5.3.</span> <span class="nav-text">Many Light Sampling</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#adaptive-integration"><span class="nav-number">6.</span> <span class="nav-text">Adaptive Integration</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#transparency"><span class="nav-number">7.</span> <span class="nav-text">Transparency</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#rt-probes-volume-structure"><span class="nav-number">7.1.</span> <span class="nav-text">RT Probes Volume Structure</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#clipmap-update-algorithm"><span class="nav-number">7.2.</span> <span class="nav-text">Clipmap Update Algorithm</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#frame-overview"><span class="nav-number">8.</span> <span class="nav-text">Frame Overview</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#persistent"><span class="nav-number">8.1.</span> <span class="nav-text">Persistent</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#spawn"><span class="nav-number">8.2.</span> <span class="nav-text">Spawn</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#filtering"><span class="nav-number">8.3.</span> <span class="nav-text">Filtering</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#apply"><span class="nav-number">8.4.</span> <span class="nav-text">Apply</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#refs"><span class="nav-number">9.</span> <span class="nav-text">refs</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Silven Huang</span>
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+
+
+  
+
+  
+
+</body>
+</html>

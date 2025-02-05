@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon32.ico?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon16.ico?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="CG," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="Variance reduction I : Analytic Integration  analytically integrating a function that is similar to the integrand; uniformly placing sample points across the integration domain; adaptively contr">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Variance Reduction for Monte Carlo estimators">
+<meta property="og:url" content="https://htplt.github.io/2024/07/15/Variance-Reduction-for-Monte-Carlo-estimators/index.html">
+<meta property="og:site_name" content="Output">
+<meta property="og:description" content="Variance reduction I : Analytic Integration  analytically integrating a function that is similar to the integrand; uniformly placing sample points across the integration domain; adaptively contr">
+<meta property="og:locale">
+<meta property="article:published_time" content="2024-07-15T15:42:05.000Z">
+<meta property="article:modified_time" content="2024-07-18T13:53:24.605Z">
+<meta property="article:author" content="Silven Huang">
+<meta property="article:tag" content="CG">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"hide","offset":12,"b2t":false,"scrollpercent":false,"onmobile":true},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://htplt.github.io/2024/07/15/Variance-Reduction-for-Monte-Carlo-estimators/"/>
+
+
+
+
+
+  <title>Variance Reduction for Monte Carlo estimators | Output</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 7.2.0"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Output</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+            About
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+            Archives
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://htplt.github.io/2024/07/15/Variance-Reduction-for-Monte-Carlo-estimators/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Output">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Variance Reduction for Monte Carlo estimators</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2024-07-15T23:42:05+08:00">
+                2024-07-15
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/math/" itemprop="url" rel="index">
+                    <span itemprop="name">math</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="variance-reduction-i-analytic-integration">Variance reduction I
+: Analytic Integration</h2>
+<ul>
+<li>analytically integrating a function that is similar to the
+integrand;</li>
+<li>uniformly placing sample points across the integration domain;</li>
+<li>adaptively controlling the sample density based on information
+gathered during sampling;</li>
+<li>and combining samples from two or more estimators whose values are
+correlated.</li>
+</ul>
+<h3 id="use-of-expected-value-reducing-dimensionality">Use of expected
+value / reducing dimensionality</h3>
+<h3 id="importance-sampling">Importance Sampling</h3>
+<h3 id="control-variates">Control variates</h3>
+<ul>
+<li>if <span class="math inline">\(f-g\)</span> is nearly a constant
+function, then <span class="math inline">\(g\)</span> should be used as
+a control variate;</li>
+<li>if <span class="math inline">\(f/g\)</span> is nearly constant, then
+<span class="math inline">\(g\)</span> should be used for importance
+sampling</li>
+</ul>
+<h2 id="variance-reduction-ii-uniform-sample-placement">Variance
+reduction II: Uniform sample placement</h2>
+<h3 id="stratified-sampling">Stratified sampling</h3>
+<p><span class="math display">\[F&#39;=\sum_{i=1}^n v_iF_i\]</span>
+<span
+class="math display">\[F_i=\frac{1}{n_i}\sum_{j=1}^{n_i}f(X_{i,j})\]</span></p>
+<p><span class="math inline">\(v_i=\mu(\Omega_i)\)</span> is the volume
+of region <span class="math inline">\(\Omega_i\)</span></p>
+<p><span class="math display">\[V[F&#39;] =
+\sum_{i=1}^n\frac{v_i^2\sigma_i^2}{n_i}\\
+= \frac{1}{N}\sum_{i=1}^nv_i\sigma_i^2\]</span> <span
+class="math inline">\(N\)</span> is the total number of samples taken,
+<span class="math inline">\(n_i=v_iN\)</span>,</p>
+<h4 id="unstratified-sampling">unstratified sampling</h4>
+<p>observe that an unstratified sample in <span
+class="math inline">\([0, 1]^s\)</span> is equivalent to: - first
+choosing a random stratum <span class="math inline">\(I_j\)</span>
+(according to the discrete probabilities <span
+class="math inline">\(v_i\)</span> ), - and then randomly choosing <span
+class="math inline">\(X_j\)</span> within <span
+class="math inline">\(I_j\)</span>. From this point of view, <span
+class="math inline">\(X_j\)</span> is chosen conditionally on <span
+class="math inline">\(I_j\)</span>.</p>
+<p>note. <span class="math inline">\(n\)</span> is the number of strata,
+<span class="math inline">\(\mu_i\)</span>, <span
+class="math inline">\(\sigma_i\)</span> is the mean and variance in
+<span class="math inline">\(i\)</span> th strata, <span
+class="math inline">\(Q\)</span> the mean value of <span
+class="math inline">\(f\)</span> over the whole domain , i.e. <span
+class="math inline">\(E[f]=Q\)</span></p>
+<p>note. <span class="math inline">\(X_j\)</span>, <span
+class="math inline">\(I_j\)</span> means the <span
+class="math inline">\(j\)</span> th sample, $I = I^i $ means the <span
+class="math inline">\(I\)</span> takes the discrete value of <span
+class="math inline">\(I^i\)</span>, i.e. the <span
+class="math inline">\(i\)</span> the stratum</p>
+<p><span class="math display">\[
+\begin{aligned}
+F
+&amp;= \frac{1}{N}\sum_{j=1}^Nf(X_j)\\
+% &amp;= \frac{1}{N}\sum_{j=1}^NF(X_j|I_j)P(I_j)\\
+% &amp;= \frac{1}{N}\sum_{j=1}^NF(X_j|I_j)v_j
+\end{aligned}
+\]</span></p>
+<p>and we want to obtain <span class="math inline">\(V[F]\)</span> as
+conditonal variance, which is the variance of the conditional
+expectation + the expected conditional variance</p>
+<p><span class="math display">\[
+V[F]
+= V_I[E_XF] + E_I[V_XF]\\
+\]</span></p>
+<p>so the conditional expectation w.r.t. <span
+class="math inline">\(X\)</span></p>
+<p><span class="math display">\[
+\begin{aligned}
+E_XF
+&amp;= E[F|I] \\
+&amp;= E[\frac{1}{N}\sum_{j=1}^Nf(X_j) | I] \\
+&amp;= \frac{1}{N}\sum_{j=1}^N E[f(X_j)| I_j] \\
+&amp;= \frac{1}{N}\sum_{j=1}^N \int f(X_j)p(X_j|I_j)dX_j \\
+&amp;= \frac{1}{N}\sum_{j=1}^N \mu(I_j) \\
+% &amp;= \sum_{i=1}^n v_i \mu_i \\
+% &amp;= \sum_{i=1}^n v_i E[f(X_i)|I_i] \\
+% &amp;= \sum_{i=1}^n v_i \mu(I_i) \\
+\end{aligned}
+\]</span></p>
+<p><span class="math inline">\(\mu(I)\)</span> is a function of <span
+class="math inline">\(I\)</span> <span
+class="math display">\[\mu(I=I^i)=\mu_i\\]</span></p>
+<p><span class="math display">\[E[\mu(I)]=\int\mu(I)p(I)dI =
+\sum_{i=1}^n p(I^i)\mu(I^i)= \sum_{i=1}^n v_i\mu_i = Q\]</span></p>
+<p><span class="math inline">\(v_i\)</span> is the volume of the
+stratum, and <span class="math inline">\(n_i=v_iN\)</span> means the
+number of samples on <span class="math inline">\(i\)</span> th
+stratum</p>
+<p>and the first term:</p>
+$$
+<span class="math display">\[\begin{aligned}
+V_I[E_XF]
+&amp;= V[\frac{1}{N}\sum_{j=1}^N \mu(I_j)] \\
+&amp;= \frac{1}{N^2}\sum_{j=1}^N V[\mu(I_j)] \\
+&amp;= \frac{1}{N^2}\sum_{j=1}^N E[(\mu(I_j) - E[\mu(I_j)])^2] \\
+&amp;= \frac{1}{N^2}\sum_{j=1}^N E[(\mu(I_j) - Q)^2] \\
+&amp;= \frac{1}{N} E[(\mu(I_j) - Q)^2] \\
+
+&amp;= \frac{1}{N} \sum_{i=1}^n(\mu(I^i) - Q)^2p(I^i) \\
+&amp;= \frac{1}{N} \sum_{i=1}^n(\mu_i - Q)^2v_i \\
+
+&amp;= \frac{1}{N}\sum_{i=1}^n v_i (\mu_i - Q)^2 \\
+\end{aligned}\]</span>
+<p>$$</p>
+<p>the conditional variance on w.r.t. <span
+class="math inline">\(X\)</span>: <span class="math display">\[
+\begin{aligned}
+V_XF
+&amp;= V[\frac{1}{N}\sum_{j=1}^Nf(X_j) | I_j] \\
+&amp;= \frac{1}{N^2}\sum_{j=1}^N V[f(X_j)|I_j] \\
+&amp;= \frac{1}{N} V[f(X)|I] \\
+&amp;= \frac{1}{N}\sum_{i=1}^n v_i\sigma_i^2\\
+\end{aligned}
+\]</span></p>
+<p>the second term:</p>
+<p><span class="math display">\[
+\begin{aligned}
+V[F]
+&amp;= E_I[V_XF] + V_I[E_XF] \\
+&amp;= \frac{1}{N}\sum_{i=1}^n v_i\sigma_i^2 +
+\frac{1}{N}\sum_{j=1}^n v_i (\mu_i - I)^2\\
+&amp;= \frac{1}{N}[\sum_{i=1}^n v_i\sigma_i^2 +
+\sum_{i=1}^n v_i (\mu_i - I)^2]\\
+\end{aligned}
+\]</span></p>
+<h3 id="latin-hypercube-sampling">Latin hypercube sampling</h3>
+<h3 id="orthogonal-array-sampling">Orthogonal array sampling</h3>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/CG/" rel="tag"># CG</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2024/06/02/Global-Illumination-based-on-Surfels/" rel="next" title="">
+                <i class="fa fa-chevron-left"></i> 
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+      <div id="sidebar-dimmer"></div>
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/%7C%7C%20archive">
+              
+                  <span class="site-state-item-count">28</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">12</span>
+                  <span class="site-state-item-name">categories</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">16</span>
+                  <span class="site-state-item-name">tags</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#variance-reduction-i-analytic-integration"><span class="nav-number">1.</span> <span class="nav-text">Variance reduction I
+: Analytic Integration</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#use-of-expected-value-reducing-dimensionality"><span class="nav-number">1.1.</span> <span class="nav-text">Use of expected
+value &#x2F; reducing dimensionality</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#importance-sampling"><span class="nav-number">1.2.</span> <span class="nav-text">Importance Sampling</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#control-variates"><span class="nav-number">1.3.</span> <span class="nav-text">Control variates</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#variance-reduction-ii-uniform-sample-placement"><span class="nav-number">2.</span> <span class="nav-text">Variance
+reduction II: Uniform sample placement</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#stratified-sampling"><span class="nav-number">2.1.</span> <span class="nav-text">Stratified sampling</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#unstratified-sampling"><span class="nav-number">2.1.1.</span> <span class="nav-text">unstratified sampling</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#latin-hypercube-sampling"><span class="nav-number">2.2.</span> <span class="nav-text">Latin hypercube sampling</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#orthogonal-array-sampling"><span class="nav-number">2.3.</span> <span class="nav-text">Orthogonal array sampling</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Silven Huang</span>
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+</body>
+</html>
