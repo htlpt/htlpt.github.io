@@ -68,7 +68,7 @@
 
 
 
-  <meta name="keywords" content="Hexo, NexT" />
+  <meta name="keywords" content="CG," />
 
 
 
@@ -79,16 +79,17 @@
 
 
 
-<meta name="description" content="Surfels are discrete surfaces  normal, position, radius, irradiance  WORLDSPACE uniform grid&#x2F;cells rigid geometry  surfels tracks a unique transformID of the geometry, (meshes writes transfor">
+<meta name="description" content="EA&#39;s GIBS notes">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Output">
-<meta property="og:url" content="https://htplt.github.io/2024/06/02/Global-Illumination-based-on-Surfels/index.html">
+<meta property="og:title" content="Global Illumination based on surfels">
+<meta property="og:url" content="https://htplt.github.io/2024/06/05/Global-Illumination-based-on-Surfels/index.html">
 <meta property="og:site_name" content="Output">
-<meta property="og:description" content="Surfels are discrete surfaces  normal, position, radius, irradiance  WORLDSPACE uniform grid&#x2F;cells rigid geometry  surfels tracks a unique transformID of the geometry, (meshes writes transfor">
+<meta property="og:description" content="EA&#39;s GIBS notes">
 <meta property="og:locale">
-<meta property="article:published_time" content="2024-06-02T05:06:11.109Z">
-<meta property="article:modified_time" content="2024-06-04T13:45:58.156Z">
+<meta property="article:published_time" content="2024-06-05T13:15:05.000Z">
+<meta property="article:modified_time" content="2025-02-05T13:20:46.077Z">
 <meta property="article:author" content="Silven Huang">
+<meta property="article:tag" content="CG">
 <meta name="twitter:card" content="summary">
 
 
@@ -119,13 +120,13 @@
 
 
 
-  <link rel="canonical" href="https://htplt.github.io/2024/06/02/Global-Illumination-based-on-Surfels/"/>
+  <link rel="canonical" href="https://htplt.github.io/2024/06/05/Global-Illumination-based-on-Surfels/"/>
 
 
 
 
 
-  <title> | Output</title>
+  <title>Global Illumination based on surfels | Output</title>
   
 
 
@@ -244,7 +245,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://htplt.github.io/2024/06/02/Global-Illumination-based-on-Surfels/">
+    <link itemprop="mainEntityOfPage" href="https://htplt.github.io/2024/06/05/Global-Illumination-based-on-Surfels/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="">
@@ -261,7 +262,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline"></h1>
+          <h1 class="post-title" itemprop="name headline">Global Illumination based on surfels</h1>
         
 
         <div class="post-meta">
@@ -273,8 +274,8 @@
               
                 <span class="post-meta-item-text">Posted on</span>
               
-              <time title="Post created" itemprop="dateCreated datePublished" datetime="2024-06-02T13:06:11+08:00">
-                2024-06-02
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2024-06-05T21:15:05+08:00">
+                2024-06-05
               </time>
             
 
@@ -283,6 +284,28 @@
             
           </span>
 
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/lighting/" itemprop="url" rel="index">
+                    <span itemprop="name">lighting</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
           
 
           
@@ -311,7 +334,8 @@
       
 
       
-        <h1 id="surfels-are-discrete-surfaces">Surfels are discrete
+        <p>EA's GIBS notes <span id="more"></span></p>
+<h1 id="surfels-are-discrete-surfaces">Surfels are discrete
 surfaces</h1>
 <ul>
 <li>normal, position, radius, irradiance<br />
@@ -353,40 +377,67 @@ rate over frame.</li>
 <li>limit path length(to 1), amortize bounces over frames</li>
 </ul>
 <h2 id="ray-guiding">Ray Guiding</h2>
-<pre><code>- store luminance 6x6 map over hemisphere
-- 8b texel + 16b scaling / surfel
-- inverse sampling discrete distributions</code></pre>
+<ul>
+<li>store luminance 6x6 map over hemisphere</li>
+<li>8b texel + 16b scaling / surfel</li>
+<li>inverse sampling discrete distributions</li>
+</ul>
+<blockquote>
 <p>[muller17]Practical Path Guiding for Efficient Light-Transport
-Simulation [mccool97]Probability Trees</p>
+Simulation</p>
+</blockquote>
+<blockquote>
+<p>[mccool97]Probability Trees</p>
+</blockquote>
 <ul>
 <li>sharing irradiance between surfels (when variance is high)</li>
 </ul>
 <h2 id="ray-sorting">Ray Sorting</h2>
-<pre><code>- acceleration structure locality
-- ray binning (battlefield 5) (2 passes)
-    - cell location for spatial hash  12bits
-    - ray direction orientaion        4bits</code></pre>
+<ul>
+<li>acceleration structure locality</li>
+<li>ray binning (battlefield 5) (2 passes)
+<ul>
+<li>cell location for spatial hash 12bits</li>
+<li>ray direction orientaion 4bits</li>
+</ul></li>
+</ul>
 <h2 id="many-light-sampling">Many Light Sampling</h2>
 <ul>
-<li><p>stochastic lightcuts [lin20]Real-Time Stochastic
-Lightcuts</p></li>
-<li><p>reservoir sampling []ReSTIR</p></li>
+<li>stochastic lightcuts</li>
 </ul>
+<blockquote>
+<p>[lin20]Real-Time Stochastic Lightcuts</p>
+</blockquote>
+<ul>
+<li>reservoir sampling</li>
+</ul>
+<blockquote>
+<p>ReSTIR</p>
+</blockquote>
 <h1 id="adaptive-integration">Adaptive Integration</h1>
 <ul>
-<li><p>give up Monte Carlo &amp; fully converging</p></li>
-<li><p>Exponetial Moving Average(EMA) <span class="math display">\[
+<li>give up Monte Carlo &amp; fully converging</li>
+<li>Exponetial Moving Average(EMA)</li>
+</ul>
+<p><span class="math display">\[
 \hat{x}_0 = 0 \\
 \hat{x}_{n+1} = lerp(\hat{x_{n}},x_{n+1},k)
-\]</span></p></li>
+\]</span></p>
+<ul>
 <li><p>estimate short-term (mean, variance)</p></li>
 <li><p>Adapt blend factor 𝑘</p></li>
 <li><p>Reduce if variance high</p></li>
 <li><p>Increase if mean far from short-term statistics</p></li>
 </ul>
 <h1 id="transparency">Transparency</h1>
-<p>ray traced probes adaptive integrator(MSME) [Sloan08]De-ringing
-[Ramamoorth01]Reconstruction</p>
+<p>ray traced probes</p>
+<p>adaptive integrator(MSME)</p>
+<blockquote>
+<p>[Sloan08]De-ringing</p>
+</blockquote>
+<blockquote>
+<p>[Ramamoorth01]Reconstruction</p>
+</blockquote>
 <h2 id="rt-probes-volume-structure">RT Probes Volume Structure</h2>
 <h2 id="clipmap-update-algorithm">Clipmap Update Algorithm</h2>
 <h1 id="frame-overview">Frame Overview</h1>
@@ -422,12 +473,16 @@ Lightcuts</p></li>
 <li>Clipmap Sampling</li>
 </ul>
 <h1 id="refs">refs</h1>
-<ul>
-<li>raytracing in hybrid real-time rendering [dd18 seed]</li>
-<li>Ray-tracing Gems (CH25 Hybrid Rendering for Real-Time Ray
-Tracing)</li>
-<li>Global Illumination based on surfels [sig 21]</li>
-</ul>
+<blockquote>
+<p>Raytracing in hybrid real-time rendering [dd18 seed]</p>
+</blockquote>
+<blockquote>
+<p>Ray-tracing Gems (CH25 Hybrid Rendering for Real-Time Ray
+Tracing)</p>
+</blockquote>
+<blockquote>
+<p>Global Illumination based on surfels [sig 21]</p>
+</blockquote>
 
       
     </div>
@@ -442,6 +497,12 @@ Tracing)</li>
     
 
     <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/CG/" rel="tag"># CG</a>
+          
+        </div>
       
 
       
@@ -799,6 +860,26 @@ surfaces</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" hre
   
 
   
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
   
 
 
